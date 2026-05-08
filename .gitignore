@@ -33,3 +33,15 @@ skv1_uitleg.html
 
 # Claude Code – local-only settings (per-machine), not shared with team
 .claude/settings.local.json
+/storage/framework/cache/data/
+/storage/framework/sessions/*
+/storage/framework/testing/
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*.log
+/storage/app/private/*
+!/storage/app/private/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/database/database.sqlite
+/database/database.sqlite-*
