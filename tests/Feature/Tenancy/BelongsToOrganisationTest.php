@@ -54,3 +54,17 @@ it('exposes withoutTenantScope to bypass the global scope', function () {
 
     expect(User::withoutTenantScope()->count())->toBe(6);
 });
+
+it('resolves the auth user from session without recursing in the tenant scope', function () {
+    $org = Organisation::factory()->create();
+    $user = User::factory()->for($org)->create();
+    app()->instance('currentOrganisation', $org);
+
+    auth()->login($user);
+    auth()->forgetUser();
+
+    $resolved = auth()->user();
+
+    expect($resolved)->not->toBeNull();
+    expect($resolved->id)->toBe($user->id);
+});

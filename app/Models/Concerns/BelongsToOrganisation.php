@@ -17,7 +17,11 @@ trait BelongsToOrganisation
         });
 
         static::addGlobalScope('organisation', function (Builder $query) {
-            $user = auth()->user();
+            // hasUser() returns the cached auth user without triggering resolution.
+            // Using user() here recurses: the scope fires during SessionGuard's own
+            // user-load query (User::find($id)), and re-entering Auth restarts that
+            // same query, exhausting the C stack and segfaulting PHP-FPM.
+            $user = auth()->hasUser() ? auth()->user() : null;
             if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
                 return;
             }

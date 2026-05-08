@@ -2,6 +2,24 @@
 
 Alle noemenswaardige wijzigingen aan dit project. Versies volgen [Semantic Versioning](https://semver.org).
 
+## [0.1.2] — 2026-05-08
+
+### Fixed
+
+- `BelongsToOrganisation` global scope no longer recurses into `auth()->user()`
+  during SessionGuard's user-resolution query. The previous code caused a C-stack
+  overflow → PHP-FPM segfault → empty HTTP 500 on the first authenticated page
+  after login. Replaced with an `auth()->hasUser()`-guarded read.
+- Regression test added in `tests/Feature/Tenancy/BelongsToOrganisationTest.php`.
+
+## [0.1.1] — 2026-05-08
+
+### Docs
+
+- Toegevoegd: `docs/handleiding.html` voor het bootstrappen van nieuwe projecten
+  vanuit het GitHub-template.
+- README + composer scripts kleine bijwerking.
+
 ## [0.1.0] — 2026-05-08
 
 ### Foundation (Phase 1)

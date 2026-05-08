@@ -94,7 +94,7 @@
 <article>
 
 <h1>skv1 starter kit — handleiding</h1>
-<p class="meta">Een nieuw project bootstrappen vanuit de kit. Werkt op elke macOS-machine met Herd Pro. Versie v0.1.1 · 2026-05-08</p>
+<p class="meta">Een nieuw project bootstrappen vanuit de kit. Werkt op elke macOS-machine met Herd Pro. Versie v0.1.2 · 2026-05-08</p>
 
 <h2>Wat is skv1?</h2>
 <p>
@@ -251,6 +251,9 @@ git push</code></pre>
 </table>
 
 <h2>Veelvoorkomende problemen</h2>
+
+<h3>Inloggen geeft HTTP 500 op /dashboard (lege response)</h3>
+<p>Bug in het <code>BelongsToOrganisation</code> global scope: een recursieve <code>auth()-&gt;user()</code> tijdens session-load → C-stack overflow → PHP-FPM segfault. Opgelost in v0.1.2. Voor projecten die vóór v0.1.2 zijn aangemaakt: vervang in <code>app/Models/Concerns/BelongsToOrganisation.php</code> de regel <code>$user = auth()-&gt;user();</code> binnen de global scope door <code>$user = auth()-&gt;hasUser() ? auth()-&gt;user() : null;</code>.</p>
 
 <h3>composer install crasht met "the requested package is not available"</h3>
 <p>Flux Pro auth ontbreekt of is verkeerd. Controleer <code>~/.composer/auth.json</code>. Test met:</p>
