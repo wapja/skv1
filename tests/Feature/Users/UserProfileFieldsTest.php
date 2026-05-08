@@ -1,8 +1,8 @@
 <?php
 
+use App\Livewire\Users\Edit as UserEdit;
 use App\Models\Organisation;
 use App\Models\User;
-use App\Livewire\Users\Edit as UserEdit;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
@@ -58,7 +58,10 @@ it('persists the new optional fields when set, and stores empty strings as null'
     $admin = User::factory()->for($this->org)->create();
     $admin->assignRole('organisation_admin');
 
-    $target = User::factory()->for($this->org)->create();
+    $target = User::factory()->for($this->org)->create([
+        'middle_name' => null,
+        'end_date' => null,
+    ]);
 
     Livewire::actingAs($admin)
         ->test(UserEdit::class, ['user' => $target])
