@@ -22,6 +22,14 @@ jobs:
         with:
           path: vendor
           key: composer-${{ hashFiles('composer.lock') }}
+      - name: Configure Flux Pro auth
+        env:
+          FLUX_PRO_USERNAME: ${{ secrets.FLUX_PRO_USERNAME }}
+          FLUX_PRO_PASSWORD: ${{ secrets.FLUX_PRO_PASSWORD }}
+        run: |
+          if [ -n "$FLUX_PRO_USERNAME" ]; then
+            composer config --global http-basic.composer.fluxui.dev "$FLUX_PRO_USERNAME" "$FLUX_PRO_PASSWORD"
+          fi
       - run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
       - run: vendor/bin/pint --test
 
