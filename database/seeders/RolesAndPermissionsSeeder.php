@@ -40,9 +40,18 @@ class RolesAndPermissionsSeeder extends Seeder
             // copy at organisation creation time (team_id = organisations.id).
             // Super-admin is *not* a spatie role — it's a User flag (is_super_admin)
             // bypassed by Gate::before. See AppServiceProvider::boot().
-            Role::firstOrCreate(
+            $template = Role::firstOrCreate(
                 ['name' => 'organisation_admin', 'guard_name' => 'web', 'team_id' => null]
             );
+
+            $template->syncPermissions([
+                'users.view', 'users.create', 'users.update', 'users.delete',
+                'users.impersonate',
+                'roles.view', 'roles.manage',
+                'organisations.view',
+                'invitations.send', 'invitations.cancel',
+                'activity.view',
+            ]);
         });
     }
 }
