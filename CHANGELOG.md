@@ -2,6 +2,56 @@
 
 Alle noemenswaardige wijzigingen aan dit project. Versies volgen [Semantic Versioning](https://semver.org).
 
+## [0.1.4] — 2026-05-08
+
+### Added
+
+- **User profile fields** — vervangt de enkele `users.name` kolom met
+  `first_name`, `middle_name` (Nederlands tussenvoegsel), `last_name`, en
+  voegt `internal_id`, `phone`, `address`, `start_date`, `end_date` toe.
+- `User::name` blijft bruikbaar als computed accessor (`Attribute::get`)
+  die de drie naamvelden samenstelt — bestaande `auth()->user()->name`
+  call-sites (sidebar, dashboard, profile widget) blijven werken zonder
+  view-aanpassingen.
+- Empty-string-to-null conversie in attribute setters voor `middle_name`,
+  `internal_id`, `phone`, `address`, `end_date` — Livewire stuurt altijd
+  strings, dus de model handelt het automatisch af voor elke writer.
+- `UpdateUserRequest` validatieregels uitgebreid met de nieuwe velden;
+  `end_date` mag niet vóór `start_date` liggen.
+- Admin edit-form (`/admin/users/{user}/edit`) met alle nieuwe inputs
+  in een 12-koloms naam-grid plus 2-koloms grids voor optionele velden.
+- 8 nieuwe NL-vertaalsleutels in `lang/nl.json` (Voornaam, Tussenvoegsel,
+  Achternaam, Personeelsnummer, Telefoon, Adres, Indiensttredingsdatum,
+  Uitdiensttredingsdatum).
+- Regression test in `tests/Feature/Users/UserProfileFieldsTest.php`
+  (factory-completeness, name-accessor compositie, end_date validatie,
+  empty-string-to-null persistentie).
+- `tests/Unit/Migrations/SchemaTest.php` uitgebreid met assertions voor
+  de 8 nieuwe kolommen en de afwezigheid van de `name` kolom.
+
+### Changed
+
+- `Users/Index` sorteert nu op `last_name`, dan `first_name` (NL conventie).
+- `InvitationService::invite()` schrijft placeholder-waarden voor
+  `first_name` (e-mail local-part) en `last_name = '(uit te nodigen)'` zodat
+  de NOT NULL constraints worden gerespecteerd; admin (of een toekomstige
+  geüpgrade Activate-flow) vervangt de placeholders.
+- `DemoUsersSeeder` gebruikt expliciete `first_name`/`last_name`/`start_date`
+  per demo-user.
+
+### Notes
+
+- **Migratie-strategie:** `2026_05_08_180000_add_profile_fields_to_users_table`
+  draait in vier fases: kolommen toevoegen als nullable, bestaande `name`
+  splitsen op whitespace (eerste woord → `first_name`, laatste → `last_name`,
+  rest → `middle_name`), tighten naar NOT NULL voor required velden, drop
+  van `name`. De `down()` is een symmetrische rondtrip. Voor projecten
+  gegenereerd vóór v0.1.4: cherry-pick deze migratie + de model/factory/
+  seeder/Edit/blade/lang aanpassingen.
+- **Out of scope (deferred):** activatie-formulier laat nog geen invitee
+  zelf naam invullen — invitees activeren met placeholder-namen die een
+  admin via UserEdit corrigeert. Volgende milestone.
+
 ## [0.1.3] — 2026-05-08
 
 ### Added

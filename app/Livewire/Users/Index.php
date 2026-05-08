@@ -23,7 +23,7 @@ class Index extends Component
 
     public function users()
     {
-        $query = User::query()->orderBy('name');
+        $query = User::query()->orderBy('last_name')->orderBy('first_name');
         if ($this->statusFilter !== '') {
             $query->where('status', $this->statusFilter);
         }

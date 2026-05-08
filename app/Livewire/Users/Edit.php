@@ -12,7 +12,21 @@ class Edit extends Component
 {
     public User $user;
 
-    public string $name = '';
+    public string $first_name = '';
+
+    public string $middle_name = '';
+
+    public string $last_name = '';
+
+    public string $internal_id = '';
+
+    public string $phone = '';
+
+    public string $address = '';
+
+    public string $start_date = '';
+
+    public string $end_date = '';
 
     public string $email = '';
 
@@ -25,7 +39,14 @@ class Edit extends Component
         $this->authorize('update', $user);
 
         $this->user = $user;
-        $this->name = $user->name;
+        $this->first_name = $user->first_name ?? '';
+        $this->middle_name = $user->middle_name ?? '';
+        $this->last_name = $user->last_name ?? '';
+        $this->internal_id = $user->internal_id ?? '';
+        $this->phone = $user->phone ?? '';
+        $this->address = $user->address ?? '';
+        $this->start_date = $user->start_date?->toDateString() ?? '';
+        $this->end_date = $user->end_date?->toDateString() ?? '';
         $this->email = $user->email;
         $this->status = $user->status;
         $this->locale = $user->locale;

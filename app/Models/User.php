@@ -7,6 +7,7 @@ use App\Models\Concerns\BelongsToOrganisation;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,7 +17,10 @@ use Lab404\Impersonate\Models\Impersonate;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
-    'name', 'email', 'password',
+    'first_name', 'middle_name', 'last_name',
+    'internal_id', 'phone', 'address',
+    'start_date', 'end_date',
+    'email', 'password',
     'organisation_id', 'is_super_admin', 'status',
     'activation_token', 'activation_expires_at', 'activated_at',
     'two_factor_secret', 'two_factor_enabled_at',
@@ -38,7 +42,43 @@ class User extends Authenticatable implements TenantOwned
             'activation_expires_at' => 'datetime',
             'activated_at' => 'datetime',
             'two_factor_enabled_at' => 'datetime',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::get(fn () => trim(implode(' ', array_filter([
+            $this->first_name,
+            $this->middle_name,
+            $this->last_name,
+        ]))));
+    }
+
+    protected function middleName(): Attribute
+    {
+        return Attribute::set(fn ($value) => $value === '' ? null : $value);
+    }
+
+    protected function internalId(): Attribute
+    {
+        return Attribute::set(fn ($value) => $value === '' ? null : $value);
+    }
+
+    protected function phone(): Attribute
+    {
+        return Attribute::set(fn ($value) => $value === '' ? null : $value);
+    }
+
+    protected function address(): Attribute
+    {
+        return Attribute::set(fn ($value) => $value === '' ? null : $value);
+    }
+
+    protected function endDate(): Attribute
+    {
+        return Attribute::set(fn ($value) => $value === '' ? null : $value);
     }
 
     public function isSuperAdmin(): bool

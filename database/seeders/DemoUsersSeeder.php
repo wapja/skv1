@@ -20,32 +20,38 @@ class DemoUsersSeeder extends Seeder
             $registrar->setPermissionsTeamId($org->id);
 
             $admin = User::factory()->for($org)->create([
-                'name' => 'Admin '.ucfirst($slug),
+                'first_name' => 'Admin',
+                'last_name' => ucfirst($slug),
                 'email' => "admin@{$slug}.local",
                 'password' => Hash::make('Password123!'),
                 'status' => 'active',
                 'activated_at' => now(),
+                'start_date' => now()->toDateString(),
             ]);
             $admin->assignRole('organisation_admin');
 
             User::factory()->for($org)->create([
-                'name' => 'User '.ucfirst($slug),
+                'first_name' => 'User',
+                'last_name' => ucfirst($slug),
                 'email' => "user@{$slug}.local",
                 'password' => Hash::make('Password123!'),
                 'status' => 'active',
                 'activated_at' => now(),
+                'start_date' => now()->toDateString(),
             ]);
         }
 
         app()->forgetInstance('currentOrganisation');
 
         User::factory()->superAdmin()->create([
-            'name' => 'Super Admin',
+            'first_name' => 'Super',
+            'last_name' => 'Admin',
             'email' => 'super@example.local',
             'organisation_id' => null,
             'password' => Hash::make('Password123!'),
             'status' => 'active',
             'activated_at' => now(),
+            'start_date' => now()->toDateString(),
         ]);
     }
 }

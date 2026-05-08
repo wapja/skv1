@@ -26,5 +26,13 @@
     "Welkom.": "Welkom.",
     "Welkom in de werkplek van :org.": "Welkom in de werkplek van :org.",
     "Super-admin": "Super-admin",
-    "Je hebt systeembrede rechten in alle organisaties.": "Je hebt systeembrede rechten in alle organisaties."
+    "Je hebt systeembrede rechten in alle organisaties.": "Je hebt systeembrede rechten in alle organisaties.",
+    "Voornaam": "Voornaam",
+    "Tussenvoegsel": "Tussenvoegsel",
+    "Achternaam": "Achternaam",
+    "Personeelsnummer": "Personeelsnummer",
+    "Telefoon": "Telefoon",
+    "Adres": "Adres",
+    "Indiensttredingsdatum": "Indiensttredingsdatum",
+    "Uitdiensttredingsdatum": "Uitdiensttredingsdatum"
 }

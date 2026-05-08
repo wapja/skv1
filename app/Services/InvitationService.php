@@ -20,7 +20,9 @@ class InvitationService
         return DB::transaction(function () use ($email, $locale, $roles, $invitedBy) {
             $user = User::create([
                 'email' => $email,
-                'name' => $email,
+                'first_name' => Str::before($email, '@'),
+                'last_name' => '(uit te nodigen)',
+                'start_date' => now()->toDateString(),
                 'locale' => $locale,
                 'status' => 'pending_activation',
             ]);

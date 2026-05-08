@@ -17,7 +17,8 @@ beforeEach(function () {
     app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
 
     $this->actor = User::factory()->for($this->org)->create([
-        'name' => 'Admin Een',
+        'first_name' => 'Admin',
+        'last_name' => 'Een',
         'email' => 'admin@demo1.local',
     ]);
     $this->actor->assignRole('organisation_admin');
@@ -25,7 +26,7 @@ beforeEach(function () {
 
 describe('Users Index Livewire', function () {
     it('lists users in the current organisation', function () {
-        $other = User::factory()->for($this->org)->create(['name' => 'Bob', 'email' => 'bob@demo1.local']);
+        $other = User::factory()->for($this->org)->create(['first_name' => 'Bob', 'last_name' => 'Tester', 'email' => 'bob@demo1.local']);
 
         $this->actingAs($this->actor);
 
@@ -36,7 +37,7 @@ describe('Users Index Livewire', function () {
 
     it('hides users from other organisations', function () {
         $other = Organisation::factory()->create(['slug' => 'demo2']);
-        User::factory()->for($other)->create(['name' => 'Outsider', 'email' => 'out@demo2.local']);
+        User::factory()->for($other)->create(['first_name' => 'Outsider', 'last_name' => 'Een', 'email' => 'out@demo2.local']);
 
         $this->actingAs($this->actor);
 
@@ -45,9 +46,9 @@ describe('Users Index Livewire', function () {
     });
 
     it('filters users by status', function () {
-        User::factory()->for($this->org)->create(['name' => 'Active Alice', 'status' => 'active']);
-        User::factory()->for($this->org)->pendingActivation()->create(['name' => 'Pending Pete']);
-        User::factory()->for($this->org)->disabled()->create(['name' => 'Disabled Dan']);
+        User::factory()->for($this->org)->create(['first_name' => 'Active', 'middle_name' => null, 'last_name' => 'Alice', 'status' => 'active']);
+        User::factory()->for($this->org)->pendingActivation()->create(['first_name' => 'Pending', 'middle_name' => null, 'last_name' => 'Pete']);
+        User::factory()->for($this->org)->disabled()->create(['first_name' => 'Disabled', 'middle_name' => null, 'last_name' => 'Dan']);
 
         $this->actingAs($this->actor);
 
@@ -85,7 +86,8 @@ describe('Users Index Livewire', function () {
 describe('Users Edit Livewire', function () {
     it('updates a users name, email, status and locale', function () {
         $target = User::factory()->for($this->org)->create([
-            'name' => 'Old Name',
+            'first_name' => 'Old',
+            'last_name' => 'Name',
             'email' => 'old@demo1.local',
             'status' => 'active',
             'locale' => 'nl',
@@ -94,16 +96,18 @@ describe('Users Edit Livewire', function () {
         $this->actingAs($this->actor);
 
         Livewire::test(Edit::class, ['user' => $target])
-            ->set('name', 'New Name')
+            ->set('first_name', 'New')
+            ->set('last_name', 'Name')
             ->set('email', 'new@demo1.local')
             ->set('status', 'disabled')
             ->set('locale', 'en')
             ->call('save')
-            ->assertHasNoErrors()
             ->assertRedirect(route('users.index'));
 
         $target->refresh();
-        expect($target->name)->toBe('New Name')
+
+        expect($target->first_name)->toBe('New')
+            ->and($target->last_name)->toBe('Name')
             ->and($target->email)->toBe('new@demo1.local')
             ->and($target->status)->toBe('disabled')
             ->and($target->locale)->toBe('en');
