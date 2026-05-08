@@ -1,5 +1,7 @@
 # skv1 — Foundation Implementation Plan (Phase 1: macro-steps 1-9)
 
+> **STATUS: COMPLETED 2026-05-08 — tag `phase-1-foundation`.** Do not re-execute. See `OUTPUT_SUMMARY.md` for resulting state. Continue with `2026-05-08-skv1-phase-2.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Brengt skv1 van leeg-Laravel naar werkende auth + multi-tenancy + RBAC fundament. Acceptance §11 stappen 1-3 + 6-7 worden door dit plan gehaald.

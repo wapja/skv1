@@ -1,58 +1,80 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# skv1
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Persoonlijke Laravel-startkit voor multi-tenant invitation-only apps.
 
-## About Laravel
+> **Status (2026-05-08):** Phase 1 (foundation) compleet — auth, multi-tenancy, RBAC scaffolding draait eind-tot-eind.
+> Phase 2 (invitation flow + CRUD + impersonation) en Phase 3 (health check, backups, error pages, template publish) zijn nog niet gebouwd.
+> Zie [`OUTPUT_SUMMARY.md`](OUTPUT_SUMMARY.md) voor exacte versies, deviations en wat er werkt.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Wat is skv1
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Multi-tenant single-database** — subdomeinen → `organisations` rij via `ResolveTenant` middleware
+- **Invitation-only auth** — geen `/register`, alleen door admin uitgenodigde users
+- **RBAC** — spatie/laravel-permission in teams-mode, super-admin via `Gate::before`
+- **Audit-trail** — spatie/activitylog op alle gevoelige acties
+- **Stack** — Laravel 13, Livewire 4, Flux UI Pro, Tailwind 4, Postgres, Pest 4
+- **Lokaal** — Laravel Herd Pro (Nginx, Postgres, Mailpit native — geen Docker)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Bootstrap (Phase 1, lokaal)
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+> Voorwaarde: [Laravel Herd Pro](https://herd.laravel.com) geïnstalleerd.
 
 ```bash
-composer require laravel/boost --dev
+git clone <this-repo> skv1
+cd skv1
 
-php artisan boost:install
+composer install
+herd link skv1
+herd secure skv1
+createdb -h 127.0.0.1 -U postgres skv1
+
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+
+npm install && npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+> **Flux Pro license** moet beschikbaar zijn als http-basic auth voor `composer.fluxui.dev`. `composer config --global http-basic.composer.fluxui.dev <email> <license-key>`. Zonder werkt `composer install` niet.
 
-## Contributing
+## Local development credentials
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Phase 1 heeft **nog geen demo-seeders**. Maak handmatig een org + user via tinker:
 
-## Code of Conduct
+```php
+$org = \App\Models\Organisation::factory()->create(['slug' => 'demo1', 'name' => 'Demo 1']);
+\App\Models\User::factory()->for($org)->create([
+    'email' => 'admin@demo1.local',
+    'password' => bcrypt('Password123!'),
+    'status' => 'active',
+]);
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Dan: `https://demo1.skv1.test/login` — login met `admin@demo1.local` / `Password123!`.
 
-## Security Vulnerabilities
+Voor super-admin: voeg `is_super_admin: true` toe.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Tests
+
+```bash
+vendor/bin/pest --testsuite=Unit,Feature,Arch --compact   # 28 cases, all green
+vendor/bin/pint --test                                    # lint check
+vendor/bin/pint                                           # auto-fix
+```
+
+## Decisions / deviations
+
+Zie [`OUTPUT_SUMMARY.md`](OUTPUT_SUMMARY.md) §3 *Deviations from Super Prompt*.
+
+Hoogtepunt: **`super_admin` is geen spatie role** maar een `users.is_super_admin` boolean + `Gate::before`. Reden: spatie's teams-mode pivot heeft `team_id` in primary key (NOT NULL); een role assignment met `team_id = null` is dus niet mogelijk in PG. De `Gate::before`-aanpak preserveert spec-intent en is idiomatisch Laravel.
+
+## Volgende stappen
+
+| Phase | Plan |
+|---|---|
+| Phase 2 (steps 10-15) | [`docs/superpowers/plans/2026-05-08-skv1-phase-2.md`](docs/superpowers/plans/2026-05-08-skv1-phase-2.md) |
+| Phase 3 (steps 16-21) | [`docs/superpowers/plans/2026-05-08-skv1-phase-3.md`](docs/superpowers/plans/2026-05-08-skv1-phase-3.md) |
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT.
