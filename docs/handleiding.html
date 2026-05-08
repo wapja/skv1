@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>skv1 starter kit — handleiding voor nieuwe projecten</title>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --fg: #1f2328;
+            --muted: #6e7781;
+            --border: #d0d7de;
+            --code-bg: #eef0f3;
+            --accent: #0969da;
+            --warn-bg: #fff8c5;
+            --warn-border: #d4a72c;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--fg);
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem 1rem 4rem;
+        }
+        article { max-width: 760px; margin: 0 auto; }
+        h1 { font-size: 1.85rem; margin: 0 0 .25rem; line-height: 1.2; }
+        h2 { font-size: 1.3rem; margin: 2.5rem 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+        h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+        p { margin: .6rem 0; }
+        ul, ol { margin: .6rem 0; padding-left: 1.5rem; }
+        li { margin: .25rem 0; }
+        .meta { color: var(--muted); font-size: .9rem; margin: 0 0 1.5rem; }
+        a { color: var(--accent); }
+        code {
+            background: var(--code-bg);
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+            font: 0.92em/1.4 "SF Mono", Menlo, Consolas, monospace;
+        }
+        pre {
+            background: var(--code-bg);
+            border-radius: 6px;
+            padding: 0.9rem 1rem;
+            overflow-x: auto;
+            font: 0.88rem/1.5 "SF Mono", Menlo, Consolas, monospace;
+            border: 1px solid var(--border);
+        }
+        pre code { background: transparent; padding: 0; font-size: 1em; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.75rem 0;
+            font-size: 0.95rem;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.65rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        th { background: var(--code-bg); font-weight: 600; }
+        .callout {
+            border: 1px solid var(--warn-border);
+            background: var(--warn-bg);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        .callout strong { color: #6f4c00; }
+        .step-num {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            border-radius: 999px;
+            width: 1.5rem;
+            height: 1.5rem;
+            line-height: 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            margin-right: 0.4rem;
+        }
+        kbd {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 0.1em 0.4em;
+            font: 0.85em "SF Mono", monospace;
+            box-shadow: 0 1px 0 var(--border);
+        }
+    </style>
+</head>
+<body>
+<article>
+
+<h1>skv1 starter kit — handleiding</h1>
+<p class="meta">Een nieuw project bootstrappen vanuit de kit. Werkt op elke macOS-machine met Herd Pro. Versie v0.1.1 · 2026-05-08</p>
+
+<h2>Wat is skv1?</h2>
+<p>
+    skv1 is een Laravel 13-startkit voor multi-tenant invitation-only apps: subdomein-tenants, RBAC met spatie/laravel-permission, invitations met signed activation links, impersonation, audit log, health-check, backups. De repo
+    <a href="https://github.com/wapja/skv1">wapja/skv1</a> is gemarkeerd als GitHub Template — daar bouw je nieuwe projecten op.
+</p>
+
+<h2>Voorwaarden per machine — eenmalig</h2>
+<p>Doe dit één keer per machine waar je skv1-projecten wilt draaien. Op je hoofdmachine staat dit waarschijnlijk al; op een nieuwe machine moet je het inrichten.</p>
+
+<h3>1. Laravel Herd Pro</h3>
+<p>Download en installeer Herd Pro: <a href="https://herd.laravel.com">herd.laravel.com</a>. Brengt PHP, Nginx, Postgres, Mailpit, Composer, Node ineens mee.</p>
+
+<h3>2. Flux Pro license in <code>~/.composer/auth.json</code></h3>
+<p>De kit gebruikt Flux UI Pro. Composer heeft daarvoor http-basic auth nodig. Maak het bestand aan (mode 600):</p>
+
+<pre><code>mkdir -p ~/.composer
+cat > ~/.composer/auth.json &lt;&lt;'EOF'
+{
+    "http-basic": {
+        "composer.fluxui.dev": {
+            "username": "&lt;jouw e-mailadres&gt;",
+            "password": "&lt;jouw flux pro license key&gt;"
+        }
+    }
+}
+EOF
+chmod 600 ~/.composer/auth.json</code></pre>
+
+<p>Of, sneller, via Composer zelf:</p>
+
+<pre><code>composer config --global http-basic.composer.fluxui.dev &lt;email&gt; &lt;license-key&gt;</code></pre>
+
+<p>Op een nieuwe machine kan je het bestand ook gewoon van je hoofdmachine kopiëren:</p>
+
+<pre><code>scp ~/.composer/auth.json &lt;nieuwe-machine&gt;:~/.composer/auth.json</code></pre>
+
+<h3>3. SSH-key voor GitHub</h3>
+<p>De kit-repo wordt via SSH gekloond. Op een nieuwe machine genereer je een key en hang je de public-key in je GitHub-account onder Settings → SSH and GPG keys:</p>
+
+<pre><code>ssh-keygen -t ed25519 -C "&lt;jouw e-mailadres&gt;"
+cat ~/.ssh/id_ed25519.pub  # kopieer naar GitHub</code></pre>
+
+<p>Test:</p>
+
+<pre><code>ssh -T git@github.com
+# verwacht: "Hi &lt;username&gt;! You've successfully authenticated, ..."</code></pre>
+
+<h2>Per nieuw project — overzicht</h2>
+<p>Een nieuw project opzetten kost twee stappen op GitHub en één commando-blok in je terminal:</p>
+
+<ol>
+    <li>Op GitHub: <em>"Use this template"</em> klikken → nieuwe repo aanmaken.</li>
+    <li>Op je machine: kloon, bootstrap, herd link, DB aanmaken, migrate, build.</li>
+</ol>
+
+<h2>Per nieuw project — stappen</h2>
+
+<h3><span class="step-num">1</span>Maak een nieuw GitHub-repo van het sjabloon</h3>
+<ol>
+    <li>Open <a href="https://github.com/wapja/skv1">github.com/wapja/skv1</a>.</li>
+    <li>Klik de groene knop <strong>Use this template</strong> → <strong>Create a new repository</strong>.</li>
+    <li>Kies <strong>Owner</strong> en <strong>Repository name</strong> (bv. <code>webedu</code>). Visibility naar smaak.</li>
+    <li>Klik <strong>Create repository</strong>. GitHub maakt een schone kopie zonder skv1's commit-historie of tags.</li>
+</ol>
+
+<h3><span class="step-num">2</span>Lokaal opzetten (TL;DR)</h3>
+<p>Eén commando-blok. Vervang <code>webedu</code> door je projectnaam.</p>
+
+<pre><code># vervang webedu door je projectnaam
+PROJECT=webedu
+GITHUB_USER=wapja  # of jouw GitHub-account/organisatie
+
+cd ~
+git clone git@github.com:${GITHUB_USER}/${PROJECT}.git
+cd ${PROJECT}
+
+composer install
+mkdir -p storage/framework/{cache,sessions,views,testing} storage/logs
+
+cp .env.example .env
+sed -i '' "s/skv1/${PROJECT}/g" .env phpunit.xml
+php artisan key:generate
+
+herd link ${PROJECT}
+herd secure ${PROJECT}
+
+PSQL=~/Library/Application\ Support/Herd/bin/psql
+"${PSQL}" -U postgres -h 127.0.0.1 -c "CREATE DATABASE ${PROJECT};"
+"${PSQL}" -U postgres -h 127.0.0.1 -c "CREATE DATABASE ${PROJECT}_test;"
+
+php artisan migrate --seed
+npm install &amp;&amp; npm run build
+
+echo "→ open https://demo1.${PROJECT}.test/login"</code></pre>
+
+<div class="callout">
+    <strong>Werkt dit op een verse machine niet?</strong> Loop de drie voorwaarden hierboven na. Veelal zit het in een ontbrekende Flux Pro <code>auth.json</code> (composer install crasht) of een onbekende SSH-key (<code>git clone</code> faalt).
+</div>
+
+<h3><span class="step-num">3</span>Inloggen en verifiëren</h3>
+<p>Open in je browser:</p>
+
+<table>
+    <tr><th>URL</th><th>Login als</th><th>Wat krijg je</th></tr>
+    <tr>
+        <td><code>https://demo1.${PROJECT}.test/login</code></td>
+        <td><code>admin@demo1.local</code> / <code>Password123!</code></td>
+        <td>Tenant demo1, organisation_admin</td>
+    </tr>
+    <tr>
+        <td><code>https://demo2.${PROJECT}.test/login</code></td>
+        <td><code>admin@demo2.local</code> / <code>Password123!</code></td>
+        <td>Tenant demo2, organisation_admin</td>
+    </tr>
+    <tr>
+        <td><code>https://admin.${PROJECT}.test/login</code></td>
+        <td><code>super@example.local</code> / <code>Password123!</code></td>
+        <td>Admin host (geen tenant-binding), super-admin</td>
+    </tr>
+</table>
+
+<p>Mailpit (alle uitnodigings- en reset-mails) draait op <a href="http://localhost:8025">http://localhost:8025</a>.</p>
+
+<h3><span class="step-num">4</span>De kit-restanten opruimen (optioneel)</h3>
+<p>Voor een schone start van je eigen project verwijder je de docs die alleen voor de kit-historie relevant zijn:</p>
+
+<pre><code>cd ~/${PROJECT}
+rm OUTPUT_SUMMARY.md CHANGELOG.md
+rm -rf docs/superpowers/
+
+# README.md aanpassen aan je eigen project
+# eventuele eigen demo-data: database/seeders/Demo*Seeder.php aanpassen of weghalen
+
+git add -A
+git commit -m "chore: rename skv1 → ${PROJECT}, drop kit-only docs"
+git push</code></pre>
+
+<h2>Per nieuw project — uitleg per regel</h2>
+
+<table>
+    <tr><th>Commando</th><th>Wat het doet</th></tr>
+    <tr><td><code>git clone</code></td><td>Haalt het verse template-repo (zonder skv1-historie).</td></tr>
+    <tr><td><code>composer install</code></td><td>Installeert PHP-dependencies. Heeft Flux Pro auth nodig.</td></tr>
+    <tr><td><code>mkdir storage/framework/{...}</code></td><td>Maakt cache-, session-, views-, testing-mappen. Gitignored, ontbreken in een verse clone.</td></tr>
+    <tr><td><code>cp .env.example .env</code> + <code>sed</code></td><td>Kopieert env-template en vervangt <code>skv1</code> door je projectnaam in alle relevante velden (<code>APP_URL</code>, <code>APP_APEX_DOMAIN</code>, <code>APP_ADMIN_HOST</code>, <code>DB_DATABASE</code>, <code>MAIL_FROM_ADDRESS</code>). Same op <code>phpunit.xml</code> voor de test-DB.</td></tr>
+    <tr><td><code>php artisan key:generate</code></td><td>Genereert <code>APP_KEY</code> (Laravel encryption key). Zonder werkt sessie-encryptie niet.</td></tr>
+    <tr><td><code>herd link / secure</code></td><td>Registreert <code>${PROJECT}.test</code> bij Herd's Nginx en plaatst een TLS-cert.</td></tr>
+    <tr><td>Twee <code>CREATE DATABASE</code></td><td>Dev-DB <code>${PROJECT}</code> + test-DB <code>${PROJECT}_test</code>. Tests gebruiken hun eigen DB via <code>phpunit.xml</code>.</td></tr>
+    <tr><td><code>php artisan migrate --seed</code></td><td>Bouwt het schema en zet <code>RolesAndPermissionsSeeder</code> + <code>DemoOrganisationsSeeder</code> + <code>DemoUsersSeeder</code> aan.</td></tr>
+    <tr><td><code>npm install &amp;&amp; npm run build</code></td><td>Compileert Tailwind + Vite assets. Voor live development gebruik je <code>npm run dev</code>.</td></tr>
+</table>
+
+<h2>Veelvoorkomende problemen</h2>
+
+<h3>composer install crasht met "the requested package is not available"</h3>
+<p>Flux Pro auth ontbreekt of is verkeerd. Controleer <code>~/.composer/auth.json</code>. Test met:</p>
+<pre><code>composer config --global --list | grep flux</code></pre>
+
+<h3>git clone vraagt om wachtwoord of geeft "Permission denied"</h3>
+<p>Je SSH-key is niet geregistreerd bij GitHub of de juiste key wordt niet aangeboden. Check <code>ssh -T git@github.com</code>.</p>
+
+<h3>php artisan crasht met "Please provide a valid cache path"</h3>
+<p>De storage-mappen ontbreken. Run het <code>mkdir storage/framework/{...}</code> commando uit stap 2.</p>
+
+<h3>https://demo1.${PROJECT}.test geeft een browser-waarschuwing</h3>
+<p>Eerste keer na <code>herd secure</code>: hard refresh (<kbd>cmd</kbd>+<kbd>shift</kbd>+<kbd>R</kbd>). Werkt het dan nog niet, run <code>herd restart</code>.</p>
+
+<h3>Site verschijnt niet in Herd Pro's GUI</h3>
+<p>De CLI (<code>herd links</code>) is autoritair en toont hem wel. De GUI cached zijn list — klik een ander tab en terug, of <code>herd restart</code>.</p>
+
+<h3>Adminer geeft "Cannot redeclare class Min_DB"</h3>
+<p>OPcache-glitch in Herd's Adminer. Fix: <code>herd restart php</code> + browser hard refresh.</p>
+
+<h3>De originele <code>~/skv1</code> directory zelf updaten</h3>
+<p>De kit zelf evolueert. Wil je een bestaand project bijwerken naar een nieuwere kit-versie, dan is dat handwerk: vergelijk de relevante files (vooral <code>app/</code>, <code>config/</code>, migraties, seeders) en cherry-pick. Een verse <em>nieuw</em> project is altijd op de laatste kit-versie omdat "Use this template" altijd de huidige <code>main</code>-staat pakt.</p>
+
+<h2>Korte commando-cheatsheet</h2>
+
+<table>
+    <tr><th>Wat</th><th>Commando</th></tr>
+    <tr><td>Tests + lint vóór commit</td><td><code>./vendor/bin/pint &amp;&amp; ./vendor/bin/pest --testsuite=Unit,Feature,Arch</code></td></tr>
+    <tr><td>DB resetten + reseed</td><td><code>php artisan migrate:fresh --seed</code></td></tr>
+    <tr><td>Tinker</td><td><code>php artisan tinker</code></td></tr>
+    <tr><td>Asset watch-mode</td><td><code>npm run dev</code></td></tr>
+    <tr><td>Tenant-DB inspecteren via psql</td><td><code>~/Library/Application\ Support/Herd/bin/psql -U postgres -h 127.0.0.1 -d ${PROJECT}</code></td></tr>
+    <tr><td>Site uit Herd verwijderen</td><td><code>herd unsecure ${PROJECT} &amp;&amp; herd unlink ${PROJECT}</code></td></tr>
+</table>
+
+</article>
+</body>
+</html>
