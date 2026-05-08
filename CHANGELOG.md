@@ -2,6 +2,26 @@
 
 Alle noemenswaardige wijzigingen aan dit project. Versies volgen [Semantic Versioning](https://semver.org).
 
+## [0.1.3] — 2026-05-08
+
+### Added
+
+- Sidebar navigation: links naar **Gebruikers**, **Rollen**, **Activiteit** en
+  **Organisaties** in `resources/views/components/layouts/app.blade.php`. Elke
+  link is gegate met `@can(...)` op de bijbehorende permissie, zodat een
+  organisation_admin de eerste drie ziet en de super-admin alle vier.
+- NL-vertalingen voor de nieuwe menu-items in `lang/nl.json`.
+- Regression test in `tests/Feature/Navigation/SidebarMenuTest.php` (3 cases:
+  organisation_admin, regular user, super-admin).
+
+### Notes
+
+- Voor projecten gegenereerd vóór v0.1.3: kopieer de `<flux:navlist>`-sectie
+  uit de nieuwe `app.blade.php` en voeg de vier translation-keys toe aan
+  `lang/nl.json`. De admin-routes zelf (`/admin/users`, `/admin/roles`,
+  `/admin/activity`, `/admin/organisations`) bestonden al sinds v0.1.0 — dit
+  was puur een ontbrekende UI-link.
+
 ## [0.1.2] — 2026-05-08
 
 ### Fixed

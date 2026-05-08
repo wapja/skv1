@@ -20,6 +20,30 @@
             <flux:navlist.item icon="home" :href="route('dashboard')" wire:navigate :current="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </flux:navlist.item>
+
+            @can('users.view')
+                <flux:navlist.item icon="users" :href="route('users.index')" wire:navigate :current="request()->routeIs('users.*')">
+                    {{ __('Gebruikers') }}
+                </flux:navlist.item>
+            @endcan
+
+            @can('roles.view')
+                <flux:navlist.item icon="shield-check" :href="route('roles.index')" wire:navigate :current="request()->routeIs('roles.*')">
+                    {{ __('Rollen') }}
+                </flux:navlist.item>
+            @endcan
+
+            @can('activity.view')
+                <flux:navlist.item icon="clipboard-document-list" :href="route('activity.index')" wire:navigate :current="request()->routeIs('activity.*')">
+                    {{ __('Activiteit') }}
+                </flux:navlist.item>
+            @endcan
+
+            @can('organisations.manage')
+                <flux:navlist.item icon="building-office-2" :href="route('organisations.index')" wire:navigate :current="request()->routeIs('organisations.*')">
+                    {{ __('Organisaties') }}
+                </flux:navlist.item>
+            @endcan
         </flux:navlist>
 
         <flux:spacer />
