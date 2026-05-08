@@ -218,7 +218,7 @@ echo "→ open https://demo1.${PROJECT}.test/login"</code></pre>
     </tr>
 </table>
 
-<p>Mailpit (alle uitnodigings- en reset-mails) draait op <a href="http://localhost:8025">http://localhost:8025</a>.</p>
+<p>Herd's mail-service vangt alle uitnodigings- en reset-mails op. SMTP-poort is <code>2525</code> (in <code>.env.example</code> ingesteld); de web-UI vind je in de Herd Pro-app onder <em>Services → Mail</em>.</p>
 
 <h3><span class="step-num">4</span>De kit-restanten opruimen (optioneel)</h3>
 <p>Voor een schone start van je eigen project verwijder je de docs die alleen voor de kit-historie relevant zijn:</p>
@@ -251,6 +251,9 @@ git push</code></pre>
 </table>
 
 <h2>Veelvoorkomende problemen</h2>
+
+<h3>Mail wordt niet verstuurd / queue-job faalt met "Connection refused" op 127.0.0.1:1025</h3>
+<p>De Herd Pro mail-service luistert op poort <strong>2525</strong>, niet op de Mailpit-default 1025. <code>.env.example</code> sinds v0.1.4 staat correct ingesteld. Voor projecten gegenereerd vóór v0.1.4: zet in <code>.env</code> <code>MAIL_PORT=2525</code>, <code>MAIL_USERNAME="${APP_NAME}"</code> en <code>MAIL_ENCRYPTION=null</code>. Zorg ook dat de mail-service aanstaat in de Herd-app (<em>Services → Mail</em>) — controleer met <code>lsof -i :2525</code>.</p>
 
 <h3>Inloggen geeft HTTP 500 op /dashboard (lege response)</h3>
 <p>Bug in het <code>BelongsToOrganisation</code> global scope: een recursieve <code>auth()-&gt;user()</code> tijdens session-load → C-stack overflow → PHP-FPM segfault. Opgelost in v0.1.2. Voor projecten die vóór v0.1.2 zijn aangemaakt: vervang in <code>app/Models/Concerns/BelongsToOrganisation.php</code> de regel <code>$user = auth()-&gt;user();</code> binnen de global scope door <code>$user = auth()-&gt;hasUser() ? auth()-&gt;user() : null;</code>.</p>

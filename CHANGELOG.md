@@ -39,6 +39,14 @@ Alle noemenswaardige wijzigingen aan dit project. Versies volgen [Semantic Versi
 - `DemoUsersSeeder` gebruikt expliciete `first_name`/`last_name`/`start_date`
   per demo-user.
 
+### Fixed
+
+- **Mail-config in `.env.example`** — Herd Pro's mail-service draait op poort
+  **2525** (niet de Mailpit-default 1025). `MAIL_PORT`, `MAIL_USERNAME`,
+  `MAIL_ENCRYPTION` aangepast zodat queued mails out-of-the-box werken.
+  Handleiding-troubleshooting kreeg een matching entry voor projecten die
+  nog op de oude config staan.
+
 ### Notes
 
 - **Migratie-strategie:** `2026_05_08_180000_add_profile_fields_to_users_table`
