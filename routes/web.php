@@ -18,6 +18,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
 });
 
+Route::get('/invitations/{token}/accept', function (string $token) {
+    abort(503, 'Activation UI not yet wired (Phase 2 Task 11).');
+})->middleware(['signed', 'guest'])->name('invitation.accept');
+
 Route::middleware('auth')->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
 
