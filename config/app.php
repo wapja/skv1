@@ -56,6 +56,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Apex Domain & Admin Host (skv1 multi-tenancy)
+    |--------------------------------------------------------------------------
+    |
+    | The apex domain is the host that does NOT carry tenant context — it
+    | renders the tenant picker (or marketing landing) when visited directly.
+    | Tenant subdomains are resolved as `<slug>.<apex_domain>` by the
+    | ResolveTenant middleware. The admin host is reserved for super-admin
+    | UIs that span all organisations.
+    |
+    */
+
+    'apex_domain' => env('APP_APEX_DOMAIN', 'skv1.test'),
+    'admin_host' => env('APP_ADMIN_HOST', 'admin.skv1.test'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
