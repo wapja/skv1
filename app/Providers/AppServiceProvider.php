@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Organisation;
 use App\Models\User;
+use App\Observers\OrganisationObserver;
 use App\Policies\RolePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -27,5 +29,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::policy(Role::class, RolePolicy::class);
+
+        Organisation::observe(OrganisationObserver::class);
     }
 }
