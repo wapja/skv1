@@ -36,11 +36,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
             }
 
-            $superAdmin = Role::firstOrCreate(
-                ['name' => 'super_admin', 'guard_name' => 'web', 'team_id' => null]
-            );
-            $superAdmin->syncPermissions(Permission::all());
-
+            // Template role for organisation admins. Each tenant gets its own
+            // copy at organisation creation time (team_id = organisations.id).
+            // Super-admin is *not* a spatie role — it's a User flag (is_super_admin)
+            // bypassed by Gate::before. See AppServiceProvider::boot().
             Role::firstOrCreate(
                 ['name' => 'organisation_admin', 'guard_name' => 'web', 'team_id' => null]
             );

@@ -52,4 +52,11 @@ class UserFactory extends Factory
             'status' => 'disabled',
         ]);
     }
+
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_super_admin' => true,
+        ]);
+    }
 }

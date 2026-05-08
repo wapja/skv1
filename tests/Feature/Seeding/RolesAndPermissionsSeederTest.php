@@ -4,7 +4,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-it('seeds the expected permissions and global roles', function () {
+it('seeds the expected permissions and the organisation_admin template role', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $expectedPermissions = [
@@ -24,14 +24,11 @@ it('seeds the expected permissions and global roles', function () {
 
     expect(Permission::count())->toBe(count($expectedPermissions));
 
-    expect(Role::where('name', 'super_admin')->whereNull('team_id')->exists())->toBeTrue();
     expect(Role::where('name', 'organisation_admin')->whereNull('team_id')->exists())->toBeTrue();
 });
 
-it('grants all permissions to super_admin', function () {
+it('does not seed a spatie super_admin role (super_admin is a User flag bypassed by Gate::before)', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $superAdmin = Role::where('name', 'super_admin')->whereNull('team_id')->first();
-
-    expect($superAdmin->permissions()->count())->toBe(Permission::count());
+    expect(Role::where('name', 'super_admin')->exists())->toBeFalse();
 });

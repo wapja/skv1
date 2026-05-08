@@ -17,6 +17,9 @@ return new class extends Migration
 
             $table->string('password')->nullable()->change();
 
+            $table->boolean('is_super_admin')->default(false)->after('organisation_id');
+            $table->index('is_super_admin');
+
             $table->string('status')->default('pending_activation')->after('email_verified_at');
             $table->string('activation_token')->nullable()->after('status');
             $table->timestamp('activation_expires_at')->nullable()->after('activation_token');
@@ -36,9 +39,10 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['organisation_id']);
             $table->dropIndex(['organisation_id', 'status']);
+            $table->dropIndex(['is_super_admin']);
             $table->dropSoftDeletes();
             $table->dropColumn([
-                'organisation_id', 'status',
+                'organisation_id', 'is_super_admin', 'status',
                 'activation_token', 'activation_expires_at', 'activated_at',
                 'two_factor_secret', 'two_factor_enabled_at',
                 'locale',
