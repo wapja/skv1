@@ -35,6 +35,7 @@ php artisan key:generate
 php artisan migrate --seed
 
 npm install && npm run build
+php artisan optimize:clear
 ```
 
 > **Flux Pro license** moet beschikbaar zijn als http-basic auth voor `composer.fluxui.dev`:

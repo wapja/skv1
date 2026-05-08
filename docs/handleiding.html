@@ -188,6 +188,7 @@ PSQL=~/Library/Application\ Support/Herd/bin/psql
 
 php artisan migrate --seed
 npm install &amp;&amp; npm run build
+php artisan optimize:clear
 
 echo "→ open https://demo1.${PROJECT}.test/login"</code></pre>
 
@@ -246,6 +247,7 @@ git push</code></pre>
     <tr><td>Twee <code>CREATE DATABASE</code></td><td>Dev-DB <code>${PROJECT}</code> + test-DB <code>${PROJECT}_test</code>. Tests gebruiken hun eigen DB via <code>phpunit.xml</code>.</td></tr>
     <tr><td><code>php artisan migrate --seed</code></td><td>Bouwt het schema en zet <code>RolesAndPermissionsSeeder</code> + <code>DemoOrganisationsSeeder</code> + <code>DemoUsersSeeder</code> aan.</td></tr>
     <tr><td><code>npm install &amp;&amp; npm run build</code></td><td>Compileert Tailwind + Vite assets. Voor live development gebruik je <code>npm run dev</code>.</td></tr>
+    <tr><td><code>php artisan optimize:clear</code></td><td>Wist alle Laravel-caches (config, routes, views, services). Tijdens <code>composer install</code> draait <code>package:discover</code> dat probeert Telescope-entries naar de DB te schrijven; die DB bestaat dan nog niet en de failed bootstrap kan stale cache achterlaten. Eén clear aan het eind voorkomt 500-errors na inloggen.</td></tr>
 </table>
 
 <h2>Veelvoorkomende problemen</h2>
