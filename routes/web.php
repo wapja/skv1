@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Activity\Index as ActivityIndex;
 use App\Livewire\Auth\Activate;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/organisations', OrganisationIndex::class)->name('organisations.index');
     Route::get('/admin/organisations/create', OrganisationEdit::class)->name('organisations.create');
     Route::get('/admin/organisations/{organisation}/edit', OrganisationEdit::class)->name('organisations.edit');
+
+    Route::get('/admin/activity', ActivityIndex::class)->name('activity.index');
 
     Route::post('/impersonate/stop', function (ImpersonationGuard $guard) {
         $guard->stop();
