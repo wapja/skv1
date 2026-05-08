@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\HealthCheckController;
+use App\Http\Middleware\HealthCheckAuth;
 use App\Livewire\Activity\Index as ActivityIndex;
 use App\Livewire\Auth\Activate;
 use App\Livewire\Auth\ForgotPassword;
@@ -29,6 +31,10 @@ Route::middleware('guest')->group(function () {
 Route::get('/invitations/{token}/accept', Activate::class)
     ->middleware(['signed', 'guest'])
     ->name('invitation.accept');
+
+Route::get('/health-check', HealthCheckController::class)
+    ->middleware(HealthCheckAuth::class)
+    ->name('health-check');
 
 Route::middleware('auth')->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');

@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'health_check' => [
+        'key' => env('HEALTH_CHECK_KEY'),
+    ],
+
 ];
