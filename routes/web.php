@@ -4,6 +4,8 @@ use App\Livewire\Auth\Activate;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Users\Edit as UserEdit;
+use App\Livewire\Users\Index as UserIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +27,9 @@ Route::get('/invitations/{token}/accept', Activate::class)
 
 Route::middleware('auth')->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
+
+    Route::get('/admin/users', UserIndex::class)->name('users.index');
+    Route::get('/admin/users/{user}/edit', UserEdit::class)->name('users.edit');
 
     Route::post('/logout', function () {
         Auth::logout();
