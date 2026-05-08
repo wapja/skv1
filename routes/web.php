@@ -9,6 +9,7 @@ use App\Livewire\Organisations\Index as OrganisationIndex;
 use App\Livewire\Roles\Index as RoleIndex;
 use App\Livewire\Users\Edit as UserEdit;
 use App\Livewire\Users\Index as UserIndex;
+use App\Services\ImpersonationGuard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/organisations', OrganisationIndex::class)->name('organisations.index');
     Route::get('/admin/organisations/create', OrganisationEdit::class)->name('organisations.create');
     Route::get('/admin/organisations/{organisation}/edit', OrganisationEdit::class)->name('organisations.edit');
+
+    Route::post('/impersonate/stop', function (ImpersonationGuard $guard) {
+        $guard->stop();
+
+        return redirect()->route('dashboard');
+    })->name('impersonate.stop');
 
     Route::post('/logout', function () {
         Auth::logout();

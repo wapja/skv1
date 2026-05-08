@@ -41,6 +41,11 @@
                                         {{ __('Bewerken') }}
                                     </flux:button>
                                 @endcan
+                                @if (auth()->user()?->can('users.impersonate') && $user->id !== auth()->id() && ! $user->is_super_admin)
+                                    <flux:button size="sm" variant="ghost" wire:click="$dispatch('open-impersonate', { userId: {{ $user->id }} })">
+                                        {{ __('Impersoneren') }}
+                                    </flux:button>
+                                @endif
                                 @can('delete', $user)
                                     <flux:button size="sm" variant="danger" wire:click="delete({{ $user->id }})">
                                         {{ __('Verwijderen') }}
@@ -55,4 +60,6 @@
     @endif
 
     <livewire:invitations.pending-list />
+
+    <livewire:users.impersonate />
 </div>

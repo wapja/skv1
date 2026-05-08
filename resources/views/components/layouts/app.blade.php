@@ -42,6 +42,17 @@
     </flux:sidebar>
 
     <flux:main>
+        @if (auth()->check() && auth()->user()->isImpersonated())
+            <flux:callout variant="warning" icon="exclamation-triangle" class="mb-6">
+                <div class="flex items-center justify-between gap-4">
+                    <span>{{ __('Je impersoneert :email.', ['email' => auth()->user()->email]) }}</span>
+                    <form method="POST" action="{{ route('impersonate.stop') }}">
+                        @csrf
+                        <flux:button type="submit" size="sm" variant="ghost">{{ __('Stop impersonatie') }}</flux:button>
+                    </form>
+                </div>
+            </flux:callout>
+        @endif
         @if (session('status'))
             <flux:callout variant="success" icon="check-circle" class="mb-6">{{ session('status') }}</flux:callout>
         @endif
