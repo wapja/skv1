@@ -1,6 +1,6 @@
-# skv1 — Output Summary (Phase 1)
+# skv1 — Output Summary
 
-> **Status:** Phase 1 (foundation) compleet, tag `phase-1-foundation`. Phase 2 + 3 nog open — zie `docs/superpowers/plans/`.
+> **Status:** Phase 1 + 2 + 3 compleet. Versie `0.1.0`. Tags: `phase-1-foundation`, `phase-2-features`, `v0.1.0`.
 > **Datum:** 2026-05-08
 
 ## 1. Locked Versions
@@ -162,14 +162,22 @@ Voor **super-admin** voeg `is_super_admin: true` toe (zie deviation 4 hieronder)
 
 ---
 
-## 5. What's Next
+## 5. Done state
 
-| Phase | Macro-steps | Plan |
+| Phase | Macro-steps | Tag |
 |---|---|---|
-| Phase 2 | 10. InvitationService + mail<br>11. Invite UI + pending list<br>12. Users CRUD<br>13. Roles & permissions UI<br>14. Org CRUD + cascade observer + DemoUsers seeder<br>15. ImpersonationGuard + UI | `docs/superpowers/plans/2026-05-08-skv1-phase-2.md` |
-| Phase 3 | 16. Activity-log views<br>17. Health check<br>18. Backups + Telescope local-only<br>19. Custom error pages<br>20. README + CHANGELOG<br>21. Template repo publish + verify | `docs/superpowers/plans/2026-05-08-skv1-phase-3.md` |
+| Phase 1 | 1-9 — foundation, multi-tenancy, auth UI | `phase-1-foundation` |
+| Phase 2 | 10-15 — invitations, users, roles, organisations, impersonation | `phase-2-features` |
+| Phase 3 | 16-21 — activity log, health check, scheduler, error pages, docs, template publish | `v0.1.0` |
 
-Acceptance §11 (van super prompt) is **nog niet** allemaal groen. De 8 acceptance-criteria worden gehaald aan het einde van Phase 3.
+**Acceptance §11 — 8/8 ✅** (zie README "Acceptance criteria" tabel).
+
+**Test totaal:** 125 Pest cases (Unit + Feature + Arch), all green. Pint clean.
+
+**Manual / verify-on-second-machine** (per Phase 3 plan §21):
+- GitHub repo "Template repository" toggle aanzetten
+- CI secrets (`FLUX_PRO_USERNAME`, `FLUX_PRO_PASSWORD`) zetten
+- Tweede laptop test: `composer create-project wapja/skv1 verify-skv1` + 8 acceptance-stappen handmatig
 
 ---
 
