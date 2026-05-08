@@ -4,6 +4,7 @@ use App\Livewire\Auth\Activate;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Roles\Index as RoleIndex;
 use App\Livewire\Users\Edit as UserEdit;
 use App\Livewire\Users\Index as UserIndex;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +31,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/users', UserIndex::class)->name('users.index');
     Route::get('/admin/users/{user}/edit', UserEdit::class)->name('users.edit');
+    Route::get('/admin/roles', RoleIndex::class)->name('roles.index');
 
     Route::post('/logout', function () {
         Auth::logout();

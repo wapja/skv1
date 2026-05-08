@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Policies\RolePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,5 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function (User $user) {
             return $user->isSuperAdmin() ? true : null;
         });
+
+        Gate::policy(Role::class, RolePolicy::class);
     }
 }
