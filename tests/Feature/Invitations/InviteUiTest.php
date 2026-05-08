@@ -16,7 +16,8 @@ use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
-    config(['app.apex_domain' => 'skv1.test']);
+    config(['app.apex_domain' => 'skv1.test', 'app.url' => 'https://skv1.test']);
+    URL::forceRootUrl('https://skv1.test');
 
     $this->seed(RolesAndPermissionsSeeder::class);
 
@@ -177,7 +178,7 @@ describe('Activate Livewire component (signed activation)', function () {
         Mail::fake();
         $invitation = app(InvitationService::class)->invite('unsigned@demo1.local', 'nl', [], $this->actor);
 
-        $this->get('/invitations/'.$invitation->token.'/accept')
+        $this->get('https://skv1.test/invitations/'.$invitation->token.'/accept')
             ->assertStatus(403);
     });
 });

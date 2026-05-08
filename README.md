@@ -24,6 +24,8 @@ git clone <this-repo> skv1
 cd skv1
 
 composer install
+mkdir -p storage/framework/{cache,sessions,views,testing} storage/logs
+
 herd link skv1
 herd secure skv1
 createdb -h 127.0.0.1 -U postgres skv1
