@@ -27,7 +27,6 @@ class Send extends Component
     #[Validate('required|in:nl,en')]
     public string $locale = 'nl';
 
-    #[Validate('array')]
     public array $roles = [];
 
     public ?int $organisationId = null;
@@ -55,6 +54,24 @@ class Send extends Component
         return Organisation::orderBy('name')->pluck('name', 'id')->all();
     }
 
+    /**
+     * @return array<string,string> internal role-name => translated label
+     */
+    public function availableRoles(): array
+    {
+        $base = [
+            'organisation_admin' => __('Organisatie-admin'),
+            'test1' => __('Test rol 1'),
+            'test2' => __('Test rol 2'),
+        ];
+
+        if (auth()->user()?->isSuperAdmin()) {
+            return ['super_admin' => __('Super-admin')] + $base;
+        }
+
+        return $base;
+    }
+
     public function send(InvitationService $service): void
     {
         $user = auth()->user();
@@ -68,6 +85,11 @@ class Send extends Component
         }
 
         $this->validate();
+
+        $this->validate([
+            'roles' => ['array'],
+            'roles.*' => ['required', 'string', 'in:'.implode(',', array_keys($this->availableRoles()))],
+        ]);
 
         if ($tenant = tenant()) {
             $organisationId = $tenant->id;

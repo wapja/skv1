@@ -231,6 +231,47 @@ describe('Send invitation Livewire component', function () {
 
         expect($component->instance()->availableOrganisations())->toBe([]);
     });
+
+    it('shows organisation_admin / test1 / test2 to org-admin inviters', function () {
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Send::class);
+
+        expect($component->instance()->availableRoles())
+            ->toBe([
+                'organisation_admin' => __('Organisatie-admin'),
+                'test1' => __('Test rol 1'),
+                'test2' => __('Test rol 2'),
+            ]);
+    });
+
+    it('shows super_admin additionally to super-admin inviters on apex', function () {
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'super-picker@example.local',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        $component = Livewire::test(Send::class);
+
+        expect(array_keys($component->instance()->availableRoles()))
+            ->toBe(['super_admin', 'organisation_admin', 'test1', 'test2']);
+    });
+
+    it('rejects a spoofed super_admin role from a non-super-admin inviter', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Spoof')
+            ->set('lastName', 'Role')
+            ->set('email', 'spoof-role@demo1.local')
+            ->set('roles', ['super_admin'])
+            ->call('send')
+            ->assertHasErrors(['roles.0']);
+    });
 });
 
 describe('PendingList Livewire component', function () {

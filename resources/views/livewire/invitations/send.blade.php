@@ -38,6 +38,12 @@
                 <option value="en">{{ __('Engels') }}</option>
             </flux:select>
 
+            <flux:checkbox.group wire:model="roles" label="{{ __('Rollen') }}">
+                @foreach ($this->availableRoles() as $roleName => $roleLabel)
+                    <flux:checkbox value="{{ $roleName }}" label="{{ $roleLabel }}" />
+                @endforeach
+            </flux:checkbox.group>
+
             @if (count($this->availableOrganisations()) > 0)
                 <flux:select wire:model="organisationId" label="{{ __('Organisatie') }}" required>
                     <option value="">{{ __('Kies een organisatie') }}</option>
