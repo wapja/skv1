@@ -4,6 +4,7 @@ namespace App\Livewire\Roles;
 
 use App\Models\Role;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -29,6 +30,30 @@ class Edit extends Component
     public function save(): mixed
     {
         $this->authorize('update', $this->role);
+
+        $this->validate([
+            'name' => [
+                'required', 'string', 'max:255', 'alpha_dash',
+                Rule::unique('roles')
+                    ->where(fn ($q) => $q
+                        ->where('guard_name', 'web')
+                        ->where('team_id', $this->role->team_id))
+                    ->ignore($this->role->id),
+                Rule::notIn(['super_admin', 'organisation_admin', 'member']),
+                function ($attribute, $value, $fail): void {
+                    $clash = Role::query()
+                        ->whereNull('team_id')
+                        ->where('name', $value)
+                        ->where('guard_name', 'web')
+                        ->exists();
+                    if ($clash) {
+                        $fail(__('Deze naam is gereserveerd voor een sjabloonrol.'));
+                    }
+                },
+            ],
+            'selectedPermissions' => 'array',
+            'selectedPermissions.*' => 'integer|exists:permissions,id',
+        ]);
 
         DB::transaction(function () {
             $this->role->update(['name' => $this->name]);

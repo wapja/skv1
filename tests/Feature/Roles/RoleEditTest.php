@@ -89,3 +89,71 @@ it('clears all permissions when saving with an empty selection', function () {
 
     expect($role->fresh()->permissions)->toHaveCount(0);
 });
+
+it('rejects names that are not alpha_dash', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('name', 'has spaces')
+        ->call('save')
+        ->assertHasErrors(['name']);
+
+    expect($role->fresh()->name)->toBe('editor');
+});
+
+it('rejects reserved role names', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+    $this->actingAs($this->actor);
+
+    foreach (['super_admin', 'organisation_admin', 'member'] as $reserved) {
+        Livewire::test(Edit::class, ['role' => $role])
+            ->set('name', $reserved)
+            ->call('save')
+            ->assertHasErrors(['name']);
+    }
+
+    expect($role->fresh()->name)->toBe('editor');
+});
+
+it('rejects a name that clashes with a template role name', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+    Role::create(['name' => 'template_only', 'guard_name' => 'web', 'team_id' => null]);
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('name', 'template_only')
+        ->call('save')
+        ->assertHasErrors(['name']);
+
+    expect($role->fresh()->name)->toBe('editor');
+});
+
+it('rejects a name that already exists in the same team', function () {
+    Role::create(['name' => 'redactor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('name', 'redactor')
+        ->call('save')
+        ->assertHasErrors(['name']);
+
+    expect($role->fresh()->name)->toBe('editor');
+});
+
+it('allows saving without changing the name (ignores unique on self)', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('name', 'editor')
+        ->call('save')
+        ->assertHasNoErrors();
+});
