@@ -7,13 +7,11 @@ use App\Exceptions\Invitation\InvitationCancelled;
 use App\Exceptions\Invitation\InvitationExpired;
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
-use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Spatie\Permission\PermissionRegistrar;
 
 class InvitationService
 {
@@ -39,24 +37,7 @@ class InvitationService
                 'status' => 'pending_activation',
             ]);
 
-            $registrar = app(PermissionRegistrar::class);
-            $previousTeamId = $registrar->getPermissionsTeamId();
-            $registrar->setPermissionsTeamId($organisationId);
-
-            try {
-                foreach ($roles as $roleName) {
-                    $user->assignRole($roleName);
-                }
-
-                if (in_array('super_admin', $roles, true)) {
-                    foreach (Organisation::where('id', '!=', $organisationId)->get() as $otherOrg) {
-                        $registrar->setPermissionsTeamId($otherOrg->id);
-                        $user->assignRole('super_admin');
-                    }
-                }
-            } finally {
-                $registrar->setPermissionsTeamId($previousTeamId);
-            }
+            app(UserRoleSyncer::class)->sync($user, $roles, $organisationId);
 
             $invitation = Invitation::create([
                 'user_id' => $user->id,
