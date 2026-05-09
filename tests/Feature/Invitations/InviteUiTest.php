@@ -74,6 +74,67 @@ describe('Send invitation Livewire component', function () {
             ->call('send')
             ->assertStatus(403);
     });
+
+    it('requires first_name and last_name', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Send::class)
+            ->set('firstName', '')
+            ->set('lastName', '')
+            ->set('email', 'someone@demo1.local')
+            ->call('send')
+            ->assertHasErrors(['firstName', 'lastName']);
+    });
+
+    it('accepts an empty middle_name', function () {
+        Mail::fake();
+        $this->actingAs($this->actor);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Solo')
+            ->set('middleName', '')
+            ->set('lastName', 'Name')
+            ->set('email', 'solo@demo1.local')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $created = User::where('email', 'solo@demo1.local')->first();
+        expect($created)->not->toBeNull()
+            ->and($created->middle_name)->toBeNull();
+    });
+
+    it('auto-fills organisation from tenant context', function () {
+        Mail::fake();
+        $this->actingAs($this->actor);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Auto')
+            ->set('lastName', 'Tenant')
+            ->set('email', 'auto@demo1.local')
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $created = User::where('email', 'auto@demo1.local')->first();
+        expect($created->organisation_id)->toBe($this->org->id);
+    });
+
+    it('ignores spoofed organisationId from tenant context', function () {
+        Mail::fake();
+        $other = Organisation::factory()->create(['slug' => 'demo-spoof']);
+        $this->actingAs($this->actor);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Spoof')
+            ->set('lastName', 'Attempt')
+            ->set('email', 'spoof@demo1.local')
+            ->set('organisationId', $other->id)
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $created = User::where('email', 'spoof@demo1.local')->first();
+        expect($created->organisation_id)->toBe($this->org->id)
+            ->and($created->organisation_id)->not->toBe($other->id);
+    });
 });
 
 describe('PendingList Livewire component', function () {
