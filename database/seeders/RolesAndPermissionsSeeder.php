@@ -36,15 +36,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
             }
 
-            // Template role for organisation admins. Each tenant gets its own
-            // copy at organisation creation time (team_id = organisations.id).
-            // Super-admin is *not* a spatie role — it's a User flag (is_super_admin)
-            // bypassed by Gate::before. See AppServiceProvider::boot().
-            $template = Role::firstOrCreate(
+            // Template roles. Each tenant gets per-team copies via OrganisationObserver.
+            $orgAdmin = Role::firstOrCreate(
                 ['name' => 'organisation_admin', 'guard_name' => 'web', 'team_id' => null]
             );
-
-            $template->syncPermissions([
+            $orgAdmin->syncPermissions([
                 'users.view', 'users.create', 'users.update', 'users.delete',
                 'users.impersonate',
                 'roles.view', 'roles.manage',
@@ -52,6 +48,19 @@ class RolesAndPermissionsSeeder extends Seeder
                 'invitations.send', 'invitations.cancel',
                 'activity.view',
             ]);
+
+            $superAdmin = Role::firstOrCreate(
+                ['name' => 'super_admin', 'guard_name' => 'web', 'team_id' => null]
+            );
+            $superAdmin->syncPermissions(Permission::all());
+
+            Role::firstOrCreate(
+                ['name' => 'test1', 'guard_name' => 'web', 'team_id' => null]
+            );
+
+            Role::firstOrCreate(
+                ['name' => 'test2', 'guard_name' => 'web', 'team_id' => null]
+            );
         });
     }
 }

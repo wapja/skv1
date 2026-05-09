@@ -26,9 +26,3 @@ it('seeds the expected permissions and the organisation_admin template role', fu
 
     expect(Role::where('name', 'organisation_admin')->whereNull('team_id')->exists())->toBeTrue();
 });
-
-it('does not seed a spatie super_admin role (super_admin is a User flag bypassed by Gate::before)', function () {
-    $this->seed(RolesAndPermissionsSeeder::class);
-
-    expect(Role::where('name', 'super_admin')->exists())->toBeFalse();
-});
