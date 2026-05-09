@@ -13,16 +13,39 @@
             </div>
 
             <flux:input
+                wire:model="firstName"
+                label="{{ __('Voornaam') }}"
+                required
+                autofocus />
+
+            <flux:input
+                wire:model="middleName"
+                label="{{ __('Tussenvoegsel') }}" />
+
+            <flux:input
+                wire:model="lastName"
+                label="{{ __('Achternaam') }}"
+                required />
+
+            <flux:input
                 wire:model="email"
                 label="{{ __('E-mailadres') }}"
                 type="email"
-                required
-                autofocus />
+                required />
 
             <flux:select wire:model="locale" label="{{ __('Taal') }}">
                 <option value="nl">{{ __('Nederlands') }}</option>
                 <option value="en">{{ __('Engels') }}</option>
             </flux:select>
+
+            @if (count($this->availableOrganisations()) > 0)
+                <flux:select wire:model="organisationId" label="{{ __('Organisatie') }}" required>
+                    <option value="">{{ __('Kies een organisatie') }}</option>
+                    @foreach ($this->availableOrganisations() as $id => $name)
+                        <option value="{{ $id }}">{{ $name }}</option>
+                    @endforeach
+                </flux:select>
+            @endif
 
             <div class="flex justify-end gap-2">
                 <flux:button type="button" variant="ghost" wire:click="$set('open', false)">

@@ -40,6 +40,8 @@ describe('Send invitation Livewire component', function () {
         $this->actingAs($this->actor);
 
         Livewire::test(Send::class)
+            ->set('firstName', 'New')
+            ->set('lastName', 'Hire')
             ->set('email', 'newhire@demo1.local')
             ->set('locale', 'nl')
             ->set('roles', ['organisation_admin'])
@@ -54,6 +56,8 @@ describe('Send invitation Livewire component', function () {
         $this->actingAs($this->actor);
 
         Livewire::test(Send::class)
+            ->set('firstName', 'A')
+            ->set('lastName', 'B')
             ->set('email', 'not-an-email')
             ->call('send')
             ->assertHasErrors(['email']);
@@ -64,6 +68,8 @@ describe('Send invitation Livewire component', function () {
         $this->actingAs($this->actor);
 
         Livewire::test(Send::class)
+            ->set('firstName', 'X')
+            ->set('lastName', 'Y')
             ->set('email', 'x@demo1.local')
             ->call('send')
             ->assertStatus(403);
@@ -74,13 +80,31 @@ describe('PendingList Livewire component', function () {
     it('lists only pending invitations belonging to the current organisation', function () {
         $other = Organisation::factory()->create(['slug' => 'demo2']);
 
-        $localInv = app(InvitationService::class)->invite('local@demo1.local', 'nl', [], $this->actor);
+        $localInv = app(InvitationService::class)->invite(
+            firstName: 'Local',
+            middleName: null,
+            lastName: 'User',
+            email: 'local@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         // simulate an invitation in another org by manually creating it
         app()->instance('currentOrganisation', $other);
         app(PermissionRegistrar::class)->setPermissionsTeamId($other->id);
         $otherActor = User::factory()->for($other)->create();
-        app(InvitationService::class)->invite('other@demo2.local', 'nl', [], $otherActor);
+        app(InvitationService::class)->invite(
+            firstName: 'Other',
+            middleName: null,
+            lastName: 'User',
+            email: 'other@demo2.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $otherActor,
+            organisationId: $other->id,
+        );
 
         // back to demo1 context
         app()->instance('currentOrganisation', $this->org);
@@ -96,7 +120,16 @@ describe('PendingList Livewire component', function () {
     it('cancels an invitation when the cancel button is invoked', function () {
         Mail::fake();
 
-        $invitation = app(InvitationService::class)->invite('cancel@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Cancel',
+            middleName: null,
+            lastName: 'User',
+            email: 'cancel@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         $this->actingAs($this->actor);
 
@@ -110,7 +143,16 @@ describe('PendingList Livewire component', function () {
     it('resends a reminder when invoked', function () {
         Mail::fake();
 
-        $invitation = app(InvitationService::class)->invite('remind@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Remind',
+            middleName: null,
+            lastName: 'User',
+            email: 'remind@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         $this->actingAs($this->actor);
 
@@ -126,7 +168,16 @@ describe('PendingList Livewire component', function () {
 describe('Activate Livewire component (signed activation)', function () {
     it('renders the activation form on a valid signed URL', function () {
         Mail::fake();
-        $invitation = app(InvitationService::class)->invite('activate@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Activate',
+            middleName: null,
+            lastName: 'User',
+            email: 'activate@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         $url = URL::temporarySignedRoute('invitation.accept', $invitation->expires_at, ['token' => $invitation->token]);
 
@@ -138,7 +189,16 @@ describe('Activate Livewire component (signed activation)', function () {
 
     it('activates the user and redirects to dashboard on submit', function () {
         Mail::fake();
-        $invitation = app(InvitationService::class)->invite('go@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Go',
+            middleName: null,
+            lastName: 'User',
+            email: 'go@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         Livewire::test(Activate::class, ['token' => $invitation->token])
             ->set('password', 'BrandNew!Pwd2026')
@@ -153,7 +213,16 @@ describe('Activate Livewire component (signed activation)', function () {
 
     it('shows an error if invitation has already been accepted', function () {
         Mail::fake();
-        $invitation = app(InvitationService::class)->invite('twice@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Twice',
+            middleName: null,
+            lastName: 'User',
+            email: 'twice@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
         app(InvitationService::class)->accept($invitation->token, 'First!Pwd2026');
 
         Livewire::test(Activate::class, ['token' => $invitation->token])
@@ -165,7 +234,16 @@ describe('Activate Livewire component (signed activation)', function () {
 
     it('rejects mismatched password confirmation', function () {
         Mail::fake();
-        $invitation = app(InvitationService::class)->invite('mismatch@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Mismatch',
+            middleName: null,
+            lastName: 'User',
+            email: 'mismatch@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         Livewire::test(Activate::class, ['token' => $invitation->token])
             ->set('password', 'Aaa!Pwd2026')
@@ -176,7 +254,16 @@ describe('Activate Livewire component (signed activation)', function () {
 
     it('rejects unsigned URL access to the activation route', function () {
         Mail::fake();
-        $invitation = app(InvitationService::class)->invite('unsigned@demo1.local', 'nl', [], $this->actor);
+        $invitation = app(InvitationService::class)->invite(
+            firstName: 'Unsigned',
+            middleName: null,
+            lastName: 'User',
+            email: 'unsigned@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
 
         $this->get('https://skv1.test/invitations/'.$invitation->token.'/accept')
             ->assertStatus(403);
