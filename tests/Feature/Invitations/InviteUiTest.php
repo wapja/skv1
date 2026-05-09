@@ -426,3 +426,26 @@ describe('Activate Livewire component (signed activation)', function () {
             ->assertStatus(403);
     });
 });
+
+describe('InvitationMail URL generation', function () {
+    it('points the activation URL to the invitee organisation subdomain', function () {
+        Mail::fake();
+
+        app(InvitationService::class)->invite(
+            firstName: 'Tenant',
+            middleName: null,
+            lastName: 'User',
+            email: 'tenant-mail@demo1.local',
+            locale: 'nl',
+            roles: [],
+            invitedBy: $this->actor,
+            organisationId: $this->org->id,
+        );
+
+        Mail::assertQueued(InvitationMail::class, function (InvitationMail $mail) {
+            $url = $mail->content()->with['url'];
+
+            return str_contains($url, 'https://demo1.skv1.test/invitations/');
+        });
+    });
+});
