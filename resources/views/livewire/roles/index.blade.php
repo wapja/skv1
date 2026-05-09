@@ -47,15 +47,17 @@
                         @endif
                     </flux:table.cell>
                     <flux:table.cell>
-                        <div class="flex items-center gap-2">
+                        <div class="flex gap-2">
                             @can('update', $role)
-                                <flux:button size="sm" :href="route('roles.edit', $role)">
+                                <flux:button size="sm" variant="ghost" :href="route('roles.edit', $role)" wire:navigate>
                                     {{ __('Bewerken') }}
                                 </flux:button>
                             @endcan
                             @can('delete', $role)
                                 @if ($role->users_count > 0)
-                                    <flux:tooltip :content="__('Niet verwijderbaar — gekoppeld aan :n gebruiker(s)', ['n' => $role->users_count])">
+                                    <flux:tooltip :content="$role->users_count === 1
+                                        ? __('Niet verwijderbaar — gekoppeld aan 1 gebruiker')
+                                        : __('Niet verwijderbaar — gekoppeld aan :count gebruikers', ['count' => $role->users_count])">
                                         <flux:button size="sm" variant="danger" disabled>
                                             {{ __('Verwijderen') }}
                                         </flux:button>
