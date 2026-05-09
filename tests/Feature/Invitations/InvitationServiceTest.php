@@ -317,3 +317,54 @@ it('persists explicit organisation_id and bypasses tenant trait', function () {
     expect($invitation->user->organisation_id)->toBe($otherOrg->id)
         ->and($invitation->user->organisation_id)->not->toBe($this->org->id);
 });
+
+it('propagates super_admin role across all organisations on invite', function () {
+    Mail::fake();
+
+    $otherOrg = Organisation::factory()->create(['slug' => 'demo-other']);
+    $thirdOrg = Organisation::factory()->create(['slug' => 'demo-third']);
+
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'Cross',
+        middleName: null,
+        lastName: 'Admin',
+        email: 'cross-admin@demo1.local',
+        locale: 'nl',
+        roles: ['super_admin'],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
+
+    $invitee = $invitation->user;
+
+    foreach ([$this->org, $otherOrg, $thirdOrg] as $org) {
+        app(PermissionRegistrar::class)->setPermissionsTeamId($org->id);
+        expect($invitee->fresh()->hasRole('super_admin'))
+            ->toBeTrue("expected super_admin role in org {$org->slug}");
+    }
+});
+
+it('only assigns non-super_admin roles in the invitee organisation', function () {
+    Mail::fake();
+
+    $otherOrg = Organisation::factory()->create(['slug' => 'demo-elsewhere']);
+
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'Org',
+        middleName: null,
+        lastName: 'Member',
+        email: 'org-member@demo1.local',
+        locale: 'nl',
+        roles: ['organisation_admin'],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
+
+    $invitee = $invitation->user;
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
+    expect($invitee->fresh()->hasRole('organisation_admin'))->toBeTrue();
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($otherOrg->id);
+    expect($invitee->fresh()->hasRole('organisation_admin'))->toBeFalse();
+});
