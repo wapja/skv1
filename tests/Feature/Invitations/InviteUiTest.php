@@ -135,6 +135,102 @@ describe('Send invitation Livewire component', function () {
         expect($created->organisation_id)->toBe($this->org->id)
             ->and($created->organisation_id)->not->toBe($other->id);
     });
+
+    it('super-admin on apex can invite into chosen org', function () {
+        Mail::fake();
+
+        $target = Organisation::factory()->create(['slug' => 'apex-target']);
+
+        // Drop tenant context (simulate apex host)
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'super@example.local',
+            'password' => Hash::make('Password123!'),
+            'status' => 'active',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Apex')
+            ->set('lastName', 'Invite')
+            ->set('email', 'apex@apex-target.local')
+            ->set('organisationId', $target->id)
+            ->call('send')
+            ->assertHasNoErrors();
+
+        $created = User::withoutTenantScope()->where('email', 'apex@apex-target.local')->first();
+        expect($created)->not->toBeNull()
+            ->and($created->organisation_id)->toBe($target->id);
+    });
+
+    it('requires organisationId on apex (no tenant context)', function () {
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'super2@example.local',
+            'password' => Hash::make('Password123!'),
+            'status' => 'active',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Missing')
+            ->set('lastName', 'Org')
+            ->set('email', 'missing@apex.local')
+            // no organisationId set
+            ->call('send')
+            ->assertHasErrors(['organisationId']);
+    });
+
+    it('rejects unknown organisationId on apex', function () {
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'super3@example.local',
+            'password' => Hash::make('Password123!'),
+            'status' => 'active',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Bogus')
+            ->set('lastName', 'Org')
+            ->set('email', 'bogus@apex.local')
+            ->set('organisationId', 999999)
+            ->call('send')
+            ->assertHasErrors(['organisationId']);
+    });
+
+    it('forbids non-super-admin from inviting on apex', function () {
+        // Regular admin actor from beforeEach. Drop tenant context (apex).
+        app()->forgetInstance('currentOrganisation');
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Send::class)
+            ->set('firstName', 'Sneaky')
+            ->set('lastName', 'Admin')
+            ->set('email', 'sneaky@apex.local')
+            ->set('organisationId', $this->org->id)
+            ->call('send')
+            ->assertStatus(403);
+    });
+
+    it('hides organisation dropdown from non-super-admin on apex', function () {
+        app()->forgetInstance('currentOrganisation');
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Send::class);
+
+        expect($component->instance()->availableOrganisations())->toBe([]);
+    });
 });
 
 describe('PendingList Livewire component', function () {
