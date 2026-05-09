@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/users', UserIndex::class)->name('users.index');
     Route::get('/admin/users/{user}/edit', UserEdit::class)->name('users.edit');
     Route::get('/admin/roles', RoleIndex::class)->name('roles.index');
+    Route::get('/admin/roles/{role}/edit', fn () => abort(404))->name('roles.edit'); // stub — replaced in Task 4
 
     Route::get('/admin/organisations', OrganisationIndex::class)->name('organisations.index');
     Route::get('/admin/organisations/create', OrganisationEdit::class)->name('organisations.create');

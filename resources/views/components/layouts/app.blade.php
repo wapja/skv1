@@ -80,6 +80,9 @@
         @if (session('status'))
             <flux:callout variant="success" icon="check-circle" class="mb-6">{{ session('status') }}</flux:callout>
         @endif
+        @if (session('error'))
+            <flux:callout variant="danger" icon="x-circle" class="mb-6">{{ session('error') }}</flux:callout>
+        @endif
         {{ $slot }}
     </flux:main>
     @fluxScripts
