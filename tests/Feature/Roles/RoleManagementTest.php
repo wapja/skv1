@@ -132,6 +132,28 @@ describe('Roles Index Livewire', function () {
         expect($listed->users_count)->toBe(1);
     });
 
+    it('hides a template when a per-org copy with the same name exists in this tenant', function () {
+        // The OrganisationObserver auto-created a per-org organisation_admin in beforeEach.
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Index::class);
+        $rows = collect($component->viewData('roles'));
+        $orgAdminRows = $rows->where('name', 'organisation_admin');
+
+        expect($orgAdminRows)->toHaveCount(1);
+        expect($orgAdminRows->first()->team_id)->toBe($this->org->id);
+    });
+
+    it('still shows a template that has no per-org copy in this tenant', function () {
+        // Drop the auto-created per-org copy so only the template remains visible.
+        Role::where('name', 'organisation_admin')->where('team_id', $this->org->id)->delete();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->assertSee('organisation_admin');
+    });
+
     it('refuses to delete the template role', function () {
         $template = Role::where('name', 'organisation_admin')->whereNull('team_id')->firstOrFail();
 
