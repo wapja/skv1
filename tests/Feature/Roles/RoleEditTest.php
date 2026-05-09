@@ -1,11 +1,8 @@
 <?php
 
-use App\Livewire\Roles\Edit;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Livewire\Livewire;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
