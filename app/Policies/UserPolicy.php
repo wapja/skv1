@@ -28,6 +28,10 @@ class UserPolicy
             return false;
         }
 
+        if ($actor->isSuperAdmin()) {
+            return $actor->can('users.update');
+        }
+
         return $actor->organisation_id === $target->organisation_id
             && $actor->can('users.update');
     }

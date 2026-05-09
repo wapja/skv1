@@ -39,7 +39,7 @@ describe('OrganisationPolicy', function () {
             ->and(Gate::allows('delete', $this->orgA))->toBeFalse();
     });
 
-    it('allows super_admin to do everything via Gate::before', function () {
+    it('allows super_admin to do everything', function () {
         $this->actingAs($this->superAdmin);
         expect(Gate::allows('viewAny', Organisation::class))->toBeTrue()
             ->and(Gate::allows('create', Organisation::class))->toBeTrue()
