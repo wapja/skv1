@@ -36,10 +36,14 @@ it('creates a pending user and an invitation row, queues the mail', function () 
     Mail::fake();
 
     $invitation = app(InvitationService::class)->invite(
-        'newhire@demo1.local',
-        'nl',
-        ['organisation_admin'],
-        $this->actor,
+        firstName: 'newhire',
+        middleName: null,
+        lastName: '(test)',
+        email: 'newhire@demo1.local',
+        locale: 'nl',
+        roles: ['organisation_admin'],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
     );
 
     expect($invitation)->toBeInstanceOf(Invitation::class)
@@ -61,7 +65,16 @@ it('creates a pending user and an invitation row, queues the mail', function () 
 it('activates the user and consumes the invitation', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('x@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'x',
+        middleName: null,
+        lastName: '(test)',
+        email: 'x@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
 
     $user = app(InvitationService::class)->accept(
         $invitation->token,
@@ -79,7 +92,16 @@ it('activates the user and consumes the invitation', function () {
 it('rejects an expired invitation token', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('y@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'y',
+        middleName: null,
+        lastName: '(test)',
+        email: 'y@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
     $invitation->update(['expires_at' => now()->subHour()]);
 
     expect(fn () => app(InvitationService::class)->accept($invitation->token, 'Pwd!Strong2026'))
@@ -89,7 +111,16 @@ it('rejects an expired invitation token', function () {
 it('rejects an already accepted invitation', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('z@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'z',
+        middleName: null,
+        lastName: '(test)',
+        email: 'z@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
     app(InvitationService::class)->accept($invitation->token, 'Pwd!Strong2026');
 
     expect(fn () => app(InvitationService::class)->accept($invitation->token, 'Other!Pwd2026'))
@@ -99,7 +130,16 @@ it('rejects an already accepted invitation', function () {
 it('rejects accepting a cancelled (soft-deleted user) invitation', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('cancel@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'cancel',
+        middleName: null,
+        lastName: '(test)',
+        email: 'cancel@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
     app(InvitationService::class)->cancel($invitation->fresh(), $this->actor);
 
     expect(fn () => app(InvitationService::class)->accept($invitation->token, 'Pwd!Strong2026'))
@@ -109,7 +149,16 @@ it('rejects accepting a cancelled (soft-deleted user) invitation', function () {
 it('stores the optional 2FA secret on accept', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('twofa@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'twofa',
+        middleName: null,
+        lastName: '(test)',
+        email: 'twofa@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
 
     $user = app(InvitationService::class)->accept(
         $invitation->token,
@@ -124,7 +173,16 @@ it('stores the optional 2FA secret on accept', function () {
 it('resends a reminder and bumps reminder_sent_at', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('remind@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'remind',
+        middleName: null,
+        lastName: '(test)',
+        email: 'remind@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
     expect($invitation->reminder_sent_at)->toBeNull();
 
     app(InvitationService::class)->resendReminder($invitation->fresh(), $this->actor);
@@ -136,7 +194,16 @@ it('resends a reminder and bumps reminder_sent_at', function () {
 it('cannot resend reminder for an accepted invitation', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('done@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'done',
+        middleName: null,
+        lastName: '(test)',
+        email: 'done@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
     app(InvitationService::class)->accept($invitation->token, 'Pwd!Strong2026');
 
     expect(fn () => app(InvitationService::class)->resendReminder($invitation->fresh(), $this->actor))
@@ -146,7 +213,16 @@ it('cannot resend reminder for an accepted invitation', function () {
 it('cancels an invitation and soft-deletes the pending user', function () {
     Mail::fake();
 
-    $invitation = app(InvitationService::class)->invite('drop@demo1.local', 'nl', [], $this->actor);
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'drop',
+        middleName: null,
+        lastName: '(test)',
+        email: 'drop@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
     $userId = $invitation->user_id;
 
     app(InvitationService::class)->cancel($invitation->fresh(), $this->actor);
@@ -157,9 +233,36 @@ it('cancels an invitation and soft-deletes the pending user', function () {
 it('purgeExpired hard-deletes invitations past expiry that are not accepted', function () {
     Mail::fake();
 
-    $kept = app(InvitationService::class)->invite('kept@demo1.local', 'nl', [], $this->actor);
-    $expired = app(InvitationService::class)->invite('old@demo1.local', 'nl', [], $this->actor);
-    $accepted = app(InvitationService::class)->invite('done@demo1.local', 'nl', [], $this->actor);
+    $kept = app(InvitationService::class)->invite(
+        firstName: 'kept',
+        middleName: null,
+        lastName: '(test)',
+        email: 'kept@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
+    $expired = app(InvitationService::class)->invite(
+        firstName: 'old',
+        middleName: null,
+        lastName: '(test)',
+        email: 'old@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
+    $accepted = app(InvitationService::class)->invite(
+        firstName: 'done',
+        middleName: null,
+        lastName: '(test)',
+        email: 'done@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
 
     $expired->update(['expires_at' => now()->subDays(1)]);
     app(InvitationService::class)->accept($accepted->token, 'Pwd!Strong2026');
@@ -171,4 +274,25 @@ it('purgeExpired hard-deletes invitations past expiry that are not accepted', fu
         ->and(Invitation::find($expired->id))->toBeNull()
         ->and(Invitation::find($kept->id))->not->toBeNull()
         ->and(Invitation::find($accepted->id))->not->toBeNull();
+});
+
+it('persists provided name fields on invite', function () {
+    Mail::fake();
+
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'Jan',
+        middleName: 'van der',
+        lastName: 'Berg',
+        email: 'jvdb@demo1.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $this->org->id,
+    );
+
+    expect($invitation->user->first_name)->toBe('Jan')
+        ->and($invitation->user->middle_name)->toBe('van der')
+        ->and($invitation->user->last_name)->toBe('Berg')
+        ->and($invitation->user->email)->toBe('jvdb@demo1.local')
+        ->and($invitation->user->organisation_id)->toBe($this->org->id);
 });

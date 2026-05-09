@@ -15,13 +15,23 @@ use Illuminate\Support\Str;
 
 class InvitationService
 {
-    public function invite(string $email, string $locale, array $roles, User $invitedBy): Invitation
-    {
-        return DB::transaction(function () use ($email, $locale, $roles, $invitedBy) {
+    public function invite(
+        string $firstName,
+        ?string $middleName,
+        string $lastName,
+        string $email,
+        string $locale,
+        array $roles,
+        User $invitedBy,
+        int $organisationId,
+    ): Invitation {
+        return DB::transaction(function () use ($firstName, $middleName, $lastName, $email, $locale, $roles, $invitedBy, $organisationId) {
             $user = User::create([
+                'organisation_id' => $organisationId,
+                'first_name' => $firstName,
+                'middle_name' => $middleName,
+                'last_name' => $lastName,
                 'email' => $email,
-                'first_name' => Str::before($email, '@'),
-                'last_name' => '(uit te nodigen)',
                 'start_date' => now()->toDateString(),
                 'locale' => $locale,
                 'status' => 'pending_activation',
