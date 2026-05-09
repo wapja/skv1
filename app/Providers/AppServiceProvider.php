@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\Organisation;
-use App\Models\User;
 use App\Observers\OrganisationObserver;
 use App\Policies\RolePolicy;
 use Illuminate\Support\Facades\Gate;
@@ -23,10 +22,6 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment(['local', 'staging', 'production'])) {
             URL::forceScheme('https');
         }
-
-        Gate::before(function (User $user) {
-            return $user->isSuperAdmin() ? true : null;
-        });
 
         Gate::policy(Role::class, RolePolicy::class);
 

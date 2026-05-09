@@ -48,3 +48,33 @@ describe('ResolveTenant apex super-admin fallback', function () {
         expect(app(PermissionRegistrar::class)->getPermissionsTeamId())->toBeNull();
     });
 });
+
+describe('User::isSuperAdmin role-based check', function () {
+    it('returns true when the user has the super_admin role in any org', function () {
+        $org = Organisation::factory()->create(['slug' => 'role-check']);
+        $user = User::factory()->for($org)->create();
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($org->id);
+        $user->assignRole('super_admin');
+
+        expect($user->fresh()->isSuperAdmin())->toBeTrue();
+    });
+
+    it('returns false when the user has no super_admin role assignment', function () {
+        $org = Organisation::factory()->create(['slug' => 'no-role']);
+        $user = User::factory()->for($org)->create();
+
+        expect($user->isSuperAdmin())->toBeFalse();
+    });
+
+    it('grants super-admin access via Spatie permissions only — no Gate::before bypass', function () {
+        $org = Organisation::factory()->create(['slug' => 'gate-check']);
+        // Create a user who has the LEGACY flag but NO role.
+        $user = User::factory()->for($org)->create(['is_super_admin' => true]);
+
+        // Permission check must fail because Gate::before no longer bypasses.
+        // The user must hold the actual super_admin role to gain permissions.
+        app(PermissionRegistrar::class)->setPermissionsTeamId($org->id);
+        expect($user->can('users.delete'))->toBeFalse();
+    });
+});

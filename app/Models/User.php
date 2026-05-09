@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Lab404\Impersonate\Models\Impersonate;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
@@ -83,7 +84,20 @@ class User extends Authenticatable implements TenantOwned
 
     public function isSuperAdmin(): bool
     {
-        return (bool) $this->is_super_admin;
+        // Spatie's roles() relationship is team-scoped, which means it only
+        // sees role pivots for the currently-set team_id. Super-admins hold
+        // the role in every organisation (or in the apex template), so we
+        // briefly disable team-scoping to ask "does this user hold super_admin
+        // ANYWHERE?" — mirroring Spatie's own bootHasRoles() pattern.
+        $registrar = app(PermissionRegistrar::class);
+        $teamsEnabled = $registrar->teams;
+        $registrar->teams = false;
+
+        try {
+            return $this->roles()->where('name', 'super_admin')->exists();
+        } finally {
+            $registrar->teams = $teamsEnabled;
+        }
     }
 
     public function invitations(): HasMany
