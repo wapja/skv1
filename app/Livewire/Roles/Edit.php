@@ -25,6 +25,20 @@ class Edit extends Component
         $this->selectedPermissions = $role->permissions->pluck('id')->all();
     }
 
+    public function save(): mixed
+    {
+        $this->authorize('update', $this->role);
+
+        $this->role->update(['name' => $this->name]);
+
+        $perms = Permission::whereIn('id', $this->selectedPermissions)->pluck('name');
+        $this->role->syncPermissions($perms);
+
+        session()->flash('status', __('Rol bijgewerkt.'));
+
+        return redirect()->route('roles.index');
+    }
+
     #[Layout('components.layouts.app')]
     #[Title('Rol bewerken')]
     public function render()

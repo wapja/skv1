@@ -1,9 +1,12 @@
 <?php
 
+use App\Livewire\Roles\Edit;
 use App\Models\Organisation;
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Spatie\Permission\Models\Role;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -52,4 +55,36 @@ it('returns 403 for a role from another organisation', function () {
     $this->actingAs($this->actor);
 
     $this->get(route('roles.edit', $role))->assertForbidden();
+});
+
+it('saves a renamed role and synced permissions, then redirects to index', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+    $role->givePermissionTo('users.view');
+
+    $newPerm = Permission::where('name', 'users.update')->first();
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('name', 'redactor')
+        ->set('selectedPermissions', [$newPerm->id])
+        ->call('save')
+        ->assertRedirect(route('roles.index'));
+
+    $role->refresh();
+    expect($role->name)->toBe('redactor')
+        ->and($role->permissions->pluck('name')->all())->toBe(['users.update']);
+});
+
+it('clears all permissions when saving with an empty selection', function () {
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+    $role->givePermissionTo('users.view');
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('selectedPermissions', [])
+        ->call('save');
+
+    expect($role->fresh()->permissions)->toHaveCount(0);
 });
