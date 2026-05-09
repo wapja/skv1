@@ -2,11 +2,11 @@
 
 namespace App\Livewire\Roles;
 
+use App\Models\Role;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use App\Models\Role;
 use Spatie\Permission\Models\Permission;
 
 class Index extends Component

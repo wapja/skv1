@@ -100,7 +100,7 @@ describe('Roles Index Livewire', function () {
             ->call('deleteRole', $id)
             ->assertHasNoErrors();
 
-        expect(\App\Models\Role::find($id))->toBeNull();
+        expect(App\Models\Role::find($id))->toBeNull();
         $this->assertSoftDeleted('roles', ['id' => $id]);
     });
 
