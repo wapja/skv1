@@ -217,4 +217,59 @@ describe('Create mode', function () {
 
         $this->get(route('roles.create'))->assertForbidden();
     });
+
+    it('rejects empty name on create', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class)
+            ->set('name', '')
+            ->call('save')
+            ->assertHasErrors(['name']);
+
+        expect(Role::where('team_id', $this->org->id)->where('name', '')->exists())->toBeFalse();
+    });
+
+    it('rejects reserved role names on create', function () {
+        $this->actingAs($this->actor);
+
+        foreach (['super_admin', 'organisation_admin', 'member'] as $reserved) {
+            Livewire::test(Edit::class)
+                ->set('name', $reserved)
+                ->call('save')
+                ->assertHasErrors(['name']);
+        }
+    });
+
+    it('rejects names that are not alpha_dash on create', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class)
+            ->set('name', 'has spaces')
+            ->call('save')
+            ->assertHasErrors(['name']);
+    });
+
+    it('rejects a name that clashes with a template role on create', function () {
+        Role::create(['name' => 'template_only', 'guard_name' => 'web', 'team_id' => null]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class)
+            ->set('name', 'template_only')
+            ->call('save')
+            ->assertHasErrors(['name']);
+
+        expect(Role::where('name', 'template_only')->where('team_id', $this->org->id)->exists())->toBeFalse();
+    });
+
+    it('rejects a name that already exists in the same team on create', function () {
+        Role::create(['name' => 'redactor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class)
+            ->set('name', 'redactor')
+            ->call('save')
+            ->assertHasErrors(['name']);
+    });
 });
