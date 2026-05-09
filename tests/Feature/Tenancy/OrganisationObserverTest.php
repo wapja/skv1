@@ -53,4 +53,21 @@ describe('OrganisationObserver::created', function () {
         app(PermissionRegistrar::class)->setPermissionsTeamId($org2->id);
         expect($superAdmin->fresh()->hasRole('super_admin'))->toBeTrue();
     });
+
+    it('propagates super_admin role to all existing super-admins, not just one', function () {
+        $org1 = Organisation::factory()->create(['slug' => 'multi-org-one']);
+
+        $superA = User::factory()->create(['organisation_id' => null]);
+        $superB = User::factory()->create(['organisation_id' => null]);
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($org1->id);
+        $superA->assignRole('super_admin');
+        $superB->assignRole('super_admin');
+
+        $org2 = Organisation::factory()->create(['slug' => 'multi-org-two']);
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($org2->id);
+        expect($superA->fresh()->hasRole('super_admin'))->toBeTrue('expected superA in org2')
+            ->and($superB->fresh()->hasRole('super_admin'))->toBeTrue('expected superB in org2');
+    });
 });
