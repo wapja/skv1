@@ -33,6 +33,12 @@
             <option value="en">{{ __('Engels') }}</option>
         </flux:select>
 
+        <flux:checkbox.group wire:model="roles" label="{{ __('Rollen') }}">
+            @foreach ($this->availableRoles() as $roleName => $roleLabel)
+                <flux:checkbox value="{{ $roleName }}" label="{{ $roleLabel }}" />
+            @endforeach
+        </flux:checkbox.group>
+
         <div class="flex justify-end gap-2">
             <flux:button type="button" variant="ghost" :href="route('users.index')" wire:navigate>
                 {{ __('Annuleren') }}

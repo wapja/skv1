@@ -3,10 +3,14 @@
 namespace App\Livewire\Users;
 
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Organisation;
 use App\Models\User;
+use App\Services\UserRoleSyncer;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Spatie\Permission\PermissionRegistrar;
 
 class Edit extends Component
 {
@@ -34,6 +38,8 @@ class Edit extends Component
 
     public string $locale = '';
 
+    public array $roles = [];
+
     public function mount(User $user): void
     {
         $this->authorize('update', $user);
@@ -50,6 +56,26 @@ class Edit extends Component
         $this->email = $user->email;
         $this->status = $user->status;
         $this->locale = $user->locale;
+
+        $this->roles = $this->loadCurrentRoles($user);
+    }
+
+    /**
+     * @return array<string,string> internal role-name => translated label
+     */
+    public function availableRoles(): array
+    {
+        $base = [
+            'organisation_admin' => __('Organisatie-admin'),
+            'test1' => __('Test rol 1'),
+            'test2' => __('Test rol 2'),
+        ];
+
+        if (auth()->user()?->isSuperAdmin()) {
+            return ['super_admin' => __('Super-admin')] + $base;
+        }
+
+        return $base;
     }
 
     protected function rules(): array
@@ -63,11 +89,52 @@ class Edit extends Component
 
         $validated = $this->validate();
 
-        $this->user->update($validated);
+        $this->validate([
+            'roles' => ['array'],
+            'roles.*' => ['required', 'string', 'in:'.implode(',', array_keys($this->availableRoles()))],
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $this->user->update($validated);
+
+            $primaryOrgId = $this->user->organisation_id
+                ?: Organisation::orderBy('id')->value('id');
+
+            app(UserRoleSyncer::class)->sync($this->user, $this->roles, (int) $primaryOrgId);
+        });
 
         session()->flash('status', __('Gebruiker opgeslagen.'));
 
         return redirect()->route('users.index');
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    protected function loadCurrentRoles(User $user): array
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+
+        try {
+            $primaryOrgId = $user->organisation_id
+                ?: Organisation::orderBy('id')->value('id');
+
+            $current = [];
+
+            if ($primaryOrgId !== null) {
+                $registrar->setPermissionsTeamId((int) $primaryOrgId);
+                $current = $user->getRoleNames()->all();
+            }
+
+            if ($user->isSuperAdmin()) {
+                $current[] = 'super_admin';
+            }
+
+            return array_values(array_unique($current));
+        } finally {
+            $registrar->setPermissionsTeamId($previousTeamId);
+        }
     }
 
     #[Layout('components.layouts.app')]

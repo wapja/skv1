@@ -166,4 +166,112 @@ describe('Users Edit Livewire', function () {
         Livewire::test(Edit::class, ['user' => $superTarget])
             ->assertStatus(403);
     });
+
+    it('shows organisation_admin / test1 / test2 to org-admin editor', function () {
+        $target = User::factory()->for($this->org)->create();
+
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Edit::class, ['user' => $target]);
+
+        expect($component->instance()->availableRoles())
+            ->toBe([
+                'organisation_admin' => __('Organisatie-admin'),
+                'test1' => __('Test rol 1'),
+                'test2' => __('Test rol 2'),
+            ]);
+    });
+
+    it('shows super_admin additionally to super-admin editor', function () {
+        $target = User::factory()->for($this->org)->create();
+
+        $editor = User::factory()->superAdmin()->create([
+            'email' => 'edit-super@example.local',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($editor);
+
+        $component = Livewire::test(Edit::class, ['user' => $target]);
+
+        expect(array_keys($component->instance()->availableRoles()))
+            ->toBe(['super_admin', 'organisation_admin', 'test1', 'test2']);
+    });
+
+    it('saves regular role assignments selected by an org-admin', function () {
+        $target = User::factory()->for($this->org)->create();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class, ['user' => $target])
+            ->set('first_name', $target->first_name)
+            ->set('last_name', $target->last_name)
+            ->set('email', $target->email)
+            ->set('start_date', $target->start_date->toDateString())
+            ->set('roles', ['test1', 'test2'])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
+        expect($target->fresh()->getRoleNames()->sort()->values()->all())
+            ->toBe(['test1', 'test2']);
+    });
+
+    it('grants super_admin via UI and propagates cross-org', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'edit-other']);
+        $target = User::factory()->for($this->org)->create();
+
+        $editor = User::factory()->superAdmin()->create([
+            'email' => 'edit-promoter@example.local',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($editor);
+
+        Livewire::test(Edit::class, ['user' => $target])
+            ->set('first_name', $target->first_name)
+            ->set('last_name', $target->last_name)
+            ->set('email', $target->email)
+            ->set('start_date', $target->start_date->toDateString())
+            ->set('roles', ['super_admin'])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        foreach ([$this->org, $otherOrg] as $org) {
+            app(PermissionRegistrar::class)->setPermissionsTeamId($org->id);
+            expect($target->fresh()->hasRole('super_admin'))
+                ->toBeTrue("expected super_admin in {$org->slug}");
+        }
+    });
+
+    it('rejects a spoofed super_admin role from a non-super-admin editor', function () {
+        $target = User::factory()->for($this->org)->create();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class, ['user' => $target])
+            ->set('first_name', $target->first_name)
+            ->set('last_name', $target->last_name)
+            ->set('email', $target->email)
+            ->set('start_date', $target->start_date->toDateString())
+            ->set('roles', ['super_admin'])
+            ->call('save')
+            ->assertHasErrors(['roles.0']);
+    });
+
+    it('allows an org-admin to demote themselves via self-edit', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class, ['user' => $this->actor])
+            ->set('first_name', $this->actor->first_name)
+            ->set('last_name', $this->actor->last_name)
+            ->set('email', $this->actor->email)
+            ->set('start_date', $this->actor->start_date->toDateString())
+            ->set('roles', [])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
+        expect($this->actor->fresh()->getRoleNames()->all())->toBe([]);
+    });
 });
