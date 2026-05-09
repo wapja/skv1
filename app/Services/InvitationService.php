@@ -56,7 +56,13 @@ class InvitationService
                 ->withProperties(['email' => $email, 'roles' => $roles])
                 ->log('sent');
 
-            return $invitation->fresh(['user']);
+            $invitation = $invitation->fresh();
+            $invitation->setRelation(
+                'user',
+                User::withoutTenantScope()->find($invitation->user_id)
+            );
+
+            return $invitation;
         });
     }
 

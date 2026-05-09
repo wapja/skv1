@@ -296,3 +296,24 @@ it('persists provided name fields on invite', function () {
         ->and($invitation->user->email)->toBe('jvdb@demo1.local')
         ->and($invitation->user->organisation_id)->toBe($this->org->id);
 });
+
+it('persists explicit organisation_id and bypasses tenant trait', function () {
+    Mail::fake();
+
+    $otherOrg = Organisation::factory()->create(['slug' => 'demo-other']);
+
+    // beforeEach binds currentOrganisation = demo1, but we pass demo-other's id explicitly
+    $invitation = app(InvitationService::class)->invite(
+        firstName: 'Cross',
+        middleName: null,
+        lastName: 'Org',
+        email: 'cross@demo-other.local',
+        locale: 'nl',
+        roles: [],
+        invitedBy: $this->actor,
+        organisationId: $otherOrg->id,
+    );
+
+    expect($invitation->user->organisation_id)->toBe($otherOrg->id)
+        ->and($invitation->user->organisation_id)->not->toBe($this->org->id);
+});
