@@ -22,7 +22,7 @@ use Spatie\Permission\Traits\HasRoles;
     'internal_id', 'phone', 'address',
     'start_date', 'end_date',
     'email', 'password',
-    'organisation_id', 'is_super_admin', 'status',
+    'organisation_id', 'status',
     'activation_token', 'activation_expires_at', 'activated_at',
     'two_factor_secret', 'two_factor_enabled_at',
     'locale',
@@ -38,7 +38,6 @@ class User extends Authenticatable implements TenantOwned
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_super_admin' => 'boolean',
             'two_factor_secret' => 'encrypted',
             'activation_expires_at' => 'datetime',
             'activated_at' => 'datetime',

@@ -78,7 +78,7 @@
                                         {{ __('Bewerken') }}
                                     </flux:button>
                                 @endcan
-                                @if (auth()->user()?->can('users.impersonate') && $user->id !== auth()->id() && ! $user->is_super_admin)
+                                @if (auth()->user()?->can('users.impersonate') && $user->id !== auth()->id() && ! $user->isSuperAdmin())
                                     <flux:button size="sm" variant="ghost" wire:click="$dispatch('open-impersonate', { userId: {{ $user->id }} })">
                                         {{ __('Impersoneren') }}
                                     </flux:button>

@@ -67,13 +67,11 @@ describe('User::isSuperAdmin role-based check', function () {
         expect($user->isSuperAdmin())->toBeFalse();
     });
 
-    it('grants super-admin access via Spatie permissions only — no Gate::before bypass', function () {
+    it('grants super-admin access via Spatie permissions only', function () {
         $org = Organisation::factory()->create(['slug' => 'gate-check']);
-        // Create a user who has the LEGACY flag but NO role.
-        $user = User::factory()->for($org)->create(['is_super_admin' => true]);
+        // User with no super_admin role assignment.
+        $user = User::factory()->for($org)->create();
 
-        // Permission check must fail because Gate::before no longer bypasses.
-        // The user must hold the actual super_admin role to gain permissions.
         app(PermissionRegistrar::class)->setPermissionsTeamId($org->id);
         expect($user->can('users.delete'))->toBeFalse();
     });

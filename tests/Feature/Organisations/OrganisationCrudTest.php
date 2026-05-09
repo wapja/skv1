@@ -126,7 +126,7 @@ describe('Demo seeders', function () {
             ->and(User::withoutTenantScope()->where('email', 'user@demo1.local')->exists())->toBeTrue()
             ->and(User::withoutTenantScope()->where('email', 'admin@demo2.local')->exists())->toBeTrue()
             ->and(User::withoutTenantScope()->where('email', 'user@demo2.local')->exists())->toBeTrue()
-            ->and(User::withoutTenantScope()->where('email', 'super@example.local')->where('is_super_admin', true)->exists())->toBeTrue();
+            ->and(User::withoutTenantScope()->where('email', 'super@example.local')->exists())->toBeTrue();
 
         $admin1 = User::withoutTenantScope()->where('email', 'admin@demo1.local')->first();
         expect($admin1->organisation_id)->toBe($demo1->id);
@@ -136,6 +136,6 @@ describe('Demo seeders', function () {
 
         $super = User::withoutTenantScope()->where('email', 'super@example.local')->first();
         expect($super->organisation_id)->toBeNull()
-            ->and($super->is_super_admin)->toBeTrue();
+            ->and($super->isSuperAdmin())->toBeTrue();
     });
 });

@@ -63,7 +63,7 @@ class UserFactory extends Factory
     public function superAdmin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_super_admin' => true,
+            'organisation_id' => null,
         ])->afterCreating(function (User $user) {
             $registrar = app(PermissionRegistrar::class);
             $previousTeamId = $registrar->getPermissionsTeamId();
