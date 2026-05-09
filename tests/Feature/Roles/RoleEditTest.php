@@ -157,3 +157,19 @@ it('allows saving without changing the name (ignores unique on self)', function 
         ->call('save')
         ->assertHasNoErrors();
 });
+
+it('rejects a name held by a soft-deleted role in the same team (DB unique constraint)', function () {
+    $stale = Role::create(['name' => 'tombstone', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+    $stale->delete();
+
+    $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+    $this->actingAs($this->actor);
+
+    Livewire::test(Edit::class, ['role' => $role])
+        ->set('name', 'tombstone')
+        ->call('save')
+        ->assertHasErrors(['name']);
+
+    expect($role->fresh()->name)->toBe('editor');
+});
