@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * @extends Factory<User>
@@ -62,6 +64,21 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_super_admin' => true,
-        ]);
+        ])->afterCreating(function (User $user) {
+            $registrar = app(PermissionRegistrar::class);
+            $previousTeamId = $registrar->getPermissionsTeamId();
+
+            try {
+                foreach (Organisation::all() as $org) {
+                    $registrar->setPermissionsTeamId($org->id);
+
+                    if (! $user->hasRole('super_admin')) {
+                        $user->assignRole('super_admin');
+                    }
+                }
+            } finally {
+                $registrar->setPermissionsTeamId($previousTeamId);
+            }
+        });
     }
 }
