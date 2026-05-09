@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/users', UserIndex::class)->name('users.index');
     Route::get('/admin/users/{user}/edit', UserEdit::class)->name('users.edit');
     Route::get('/admin/roles', RoleIndex::class)->name('roles.index');
+    Route::get('/admin/roles/create', RoleEdit::class)->name('roles.create');
     Route::get('/admin/roles/{role}/edit', RoleEdit::class)->name('roles.edit');
 
     Route::get('/admin/organisations', OrganisationIndex::class)->name('organisations.index');

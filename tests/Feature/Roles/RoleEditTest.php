@@ -201,4 +201,20 @@ describe('Create mode', function () {
         expect($created)->not->toBeNull()
             ->and($created->permissions->pluck('name')->all())->toBe(['users.view']);
     });
+
+    it('opens the create page for an authorized user', function () {
+        $this->actingAs($this->actor);
+
+        $this->get(route('roles.create'))
+            ->assertOk()
+            ->assertSee('Nieuwe rol');
+    });
+
+    it('returns 403 on the create page when actor lacks roles.manage', function () {
+        $regular = User::factory()->for($this->org)->create();
+
+        $this->actingAs($regular);
+
+        $this->get(route('roles.create'))->assertForbidden();
+    });
 });
