@@ -59,7 +59,7 @@ class InvitationService
             $invitation = $invitation->fresh();
             $invitation->setRelation(
                 'user',
-                User::withoutTenantScope()->find($invitation->user_id)
+                User::withoutTenantScope()->findOrFail($invitation->user_id)
             );
 
             return $invitation;
