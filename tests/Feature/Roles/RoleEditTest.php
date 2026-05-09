@@ -84,7 +84,8 @@ it('clears all permissions when saving with an empty selection', function () {
 
     Livewire::test(Edit::class, ['role' => $role])
         ->set('selectedPermissions', [])
-        ->call('save');
+        ->call('save')
+        ->assertRedirect(route('roles.index'));
 
     expect($role->fresh()->permissions)->toHaveCount(0);
 });

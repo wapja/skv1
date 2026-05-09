@@ -3,6 +3,7 @@
 namespace App\Livewire\Roles;
 
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -29,10 +30,13 @@ class Edit extends Component
     {
         $this->authorize('update', $this->role);
 
-        $this->role->update(['name' => $this->name]);
+        DB::transaction(function () {
+            $this->role->update(['name' => $this->name]);
 
-        $perms = Permission::whereIn('id', $this->selectedPermissions)->pluck('name');
-        $this->role->syncPermissions($perms);
+            // selectedPermissions arrive as string-cast ints from Livewire's wire-properties; resolve to names before syncing.
+            $perms = Permission::whereIn('id', $this->selectedPermissions)->pluck('name');
+            $this->role->syncPermissions($perms);
+        });
 
         session()->flash('status', __('Rol bijgewerkt.'));
 
