@@ -173,3 +173,32 @@ it('rejects a name held by a soft-deleted role in the same team (DB unique const
 
     expect($role->fresh()->name)->toBe('editor');
 });
+
+describe('Create mode', function () {
+    it('mounts in create mode without a role argument', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class)
+            ->assertOk()
+            ->assertSet('role', null)
+            ->assertSet('name', '')
+            ->assertSet('selectedPermissions', []);
+    });
+
+    it('creates a per-org role with selected permissions and redirects to index', function () {
+        $perm = Permission::where('name', 'users.view')->first();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Edit::class)
+            ->set('name', 'editor')
+            ->set('selectedPermissions', [$perm->id])
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('roles.index'));
+
+        $created = Role::where('name', 'editor')->where('team_id', $this->org->id)->first();
+        expect($created)->not->toBeNull()
+            ->and($created->permissions->pluck('name')->all())->toBe(['users.view']);
+    });
+});

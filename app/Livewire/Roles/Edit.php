@@ -12,24 +12,32 @@ use Spatie\Permission\Models\Permission;
 
 class Edit extends Component
 {
-    public Role $role;
+    public ?Role $role = null;
 
     public string $name = '';
 
     public array $selectedPermissions = [];
 
-    public function mount(Role $role): void
+    public function mount(?Role $role = null): void
     {
-        $this->authorize('update', $role);
+        if ($role && $role->exists) {
+            $this->authorize('update', $role);
 
-        $this->role = $role;
-        $this->name = $role->name;
-        $this->selectedPermissions = $role->permissions->pluck('id')->all();
+            $this->role = $role;
+            $this->name = $role->name;
+            $this->selectedPermissions = $role->permissions->pluck('id')->all();
+        } else {
+            $this->authorize('create', Role::class);
+        }
     }
 
     public function save(): mixed
     {
-        $this->authorize('update', $this->role);
+        if ($this->role) {
+            $this->authorize('update', $this->role);
+        } else {
+            $this->authorize('create', Role::class);
+        }
 
         $this->validate([
             'name' => [
@@ -37,8 +45,8 @@ class Edit extends Component
                 Rule::unique('roles')
                     ->where(fn ($q) => $q
                         ->where('guard_name', 'web')
-                        ->where('team_id', $this->role->team_id))
-                    ->ignore($this->role->id),
+                        ->where('team_id', $this->role?->team_id ?? tenant()?->id))
+                    ->ignore($this->role?->id),
                 Rule::notIn(['super_admin', 'organisation_admin', 'member']),
                 function ($attribute, $value, $fail): void {
                     $clash = Role::query()
@@ -55,15 +63,25 @@ class Edit extends Component
             'selectedPermissions.*' => 'integer|exists:permissions,id',
         ]);
 
+        $wasCreate = $this->role === null;
+
         DB::transaction(function () {
-            $this->role->update(['name' => $this->name]);
+            if ($this->role) {
+                $this->role->update(['name' => $this->name]);
+            } else {
+                $this->role = Role::create([
+                    'name' => $this->name,
+                    'guard_name' => 'web',
+                    'team_id' => tenant()?->id,
+                ]);
+            }
 
             // selectedPermissions arrive as string-cast ints from Livewire's wire-properties; resolve to names before syncing.
             $perms = Permission::whereIn('id', $this->selectedPermissions)->pluck('name');
             $this->role->syncPermissions($perms);
         });
 
-        session()->flash('status', __('Rol bijgewerkt.'));
+        session()->flash('status', __($wasCreate ? 'Rol aangemaakt.' : 'Rol bijgewerkt.'));
 
         return redirect()->route('roles.index');
     }
