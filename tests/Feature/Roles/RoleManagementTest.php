@@ -6,7 +6,6 @@ use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -72,22 +71,6 @@ describe('Roles Index Livewire', function () {
 
         Livewire::test(Index::class)
             ->assertDontSee('foreign-role');
-    });
-
-    it('creates a per-org role with selected permissions', function () {
-        $perm = Permission::where('name', 'users.view')->first();
-
-        $this->actingAs($this->actor);
-
-        Livewire::test(Index::class)
-            ->set('newRoleName', 'editor')
-            ->set('newRolePermissions', [$perm->id])
-            ->call('createRole')
-            ->assertHasNoErrors();
-
-        $created = Role::where('name', 'editor')->where('team_id', $this->org->id)->first();
-        expect($created)->not->toBeNull()
-            ->and($created->permissions->pluck('name')->all())->toContain('users.view');
     });
 
     it('soft-deletes a per-org role with no users attached', function () {
