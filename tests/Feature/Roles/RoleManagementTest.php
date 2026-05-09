@@ -90,24 +90,24 @@ describe('Roles Index Livewire', function () {
             ->and($created->permissions->pluck('name')->all())->toContain('users.view');
     });
 
-    it('updates the permissions of an existing per-org role', function () {
-        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
-        $role->givePermissionTo('users.view');
-
-        $newPerm = Permission::where('name', 'users.update')->first();
+    it('soft-deletes a per-org role with no users attached', function () {
+        $role = Role::create(['name' => 'tobegone', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+        $id = $role->id;
 
         $this->actingAs($this->actor);
 
         Livewire::test(Index::class)
-            ->call('savePermissions', $role->id, [$newPerm->id])
+            ->call('deleteRole', $id)
             ->assertHasNoErrors();
 
-        $role->refresh();
-        expect($role->permissions->pluck('name')->all())->toBe(['users.update']);
+        expect(\App\Models\Role::find($id))->toBeNull();
+        $this->assertSoftDeleted('roles', ['id' => $id]);
     });
 
-    it('deletes a per-org role', function () {
-        $role = Role::create(['name' => 'tobegone', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+    it('refuses to delete a role that still has users attached', function () {
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+        $member = User::factory()->for($this->org)->create();
+        $member->assignRole($role);
 
         $this->actingAs($this->actor);
 
@@ -115,7 +115,21 @@ describe('Roles Index Livewire', function () {
             ->call('deleteRole', $role->id)
             ->assertHasNoErrors();
 
-        expect(Role::find($role->id))->toBeNull();
+        // Role must still exist and must NOT be soft-deleted
+        $this->assertDatabaseHas('roles', ['id' => $role->id, 'deleted_at' => null]);
+    });
+
+    it('exposes users_count on each listed role', function () {
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+        $member = User::factory()->for($this->org)->create();
+        $member->assignRole($role);
+
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Index::class);
+
+        $listed = collect($component->viewData('roles'))->firstWhere('id', $role->id);
+        expect($listed->users_count)->toBe(1);
     });
 
     it('refuses to delete the template role', function () {

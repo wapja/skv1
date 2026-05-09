@@ -6,8 +6,8 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use App\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class Index extends Component
 {
@@ -37,21 +37,16 @@ class Index extends Component
         session()->flash('status', __('Rol aangemaakt.'));
     }
 
-    public function savePermissions(int $roleId, array $permissionIds): void
-    {
-        $role = Role::findOrFail($roleId);
-        $this->authorize('update', $role);
-
-        $perms = Permission::whereIn('id', $permissionIds)->pluck('name');
-        $role->syncPermissions($perms);
-
-        session()->flash('status', __('Permissies opgeslagen.'));
-    }
-
     public function deleteRole(int $roleId): void
     {
         $role = Role::findOrFail($roleId);
         $this->authorize('delete', $role);
+
+        if ($role->users()->count() > 0) {
+            session()->flash('error', __('Rol is nog gekoppeld aan gebruikers.'));
+
+            return;
+        }
 
         $role->delete();
         session()->flash('status', __('Rol verwijderd.'));
@@ -62,6 +57,7 @@ class Index extends Component
         return Role::query()
             ->where(fn ($q) => $q->whereNull('team_id')->orWhere('team_id', tenant()?->id))
             ->with('permissions')
+            ->withCount('users')
             ->orderBy('name')
             ->get();
     }
