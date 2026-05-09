@@ -60,7 +60,9 @@ class ResolveTenant
         // no team-id has been set yet (or it was set to a stale value by an
         // earlier middleware), so going through `$user->roles()` would
         // incorrectly filter out the assignment.
-        $superAdminRoleId = Role::where('name', 'super_admin')->value('id');
+        $superAdminRoleId = Role::whereNull('team_id')
+            ->where('name', 'super_admin')
+            ->value('id');
         if (! $superAdminRoleId) {
             return;
         }
