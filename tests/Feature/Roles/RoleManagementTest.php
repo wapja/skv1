@@ -165,4 +165,35 @@ describe('Roles Index Livewire', function () {
 
         expect(Role::find($template->id))->not->toBeNull();
     });
+
+    it('renders a "Nieuwe rol" button visible to authorized users', function () {
+        $this->actingAs($this->actor);
+
+        $this->get(route('roles.index'))
+            ->assertOk()
+            ->assertSee('Nieuwe rol')
+            ->assertSee(route('roles.create'));
+    });
+
+    it('does not render the inline create-form anymore', function () {
+        $this->actingAs($this->actor);
+
+        $this->get(route('roles.index'))
+            ->assertOk()
+            ->assertDontSee('Nieuwe rol aanmaken');
+    });
+
+    it('shows an empty-state callout when there are no visible roles', function () {
+        // Ruim alle template-rollen op zodat de query een lege collectie oplevert.
+        // Gate::before bypasses the policy so the actor can still reach the page
+        // even though forceDelete() removes every role (including theirs).
+        Gate::before(fn () => true);
+        Role::query()->forceDelete();
+
+        $this->actingAs($this->actor);
+
+        $this->get(route('roles.index'))
+            ->assertOk()
+            ->assertSee('Geen rollen gevonden.');
+    });
 });
