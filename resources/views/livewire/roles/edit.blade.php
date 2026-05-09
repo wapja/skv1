@@ -3,7 +3,9 @@
         {{ __('Terug') }}
     </flux:button>
 
-    <flux:heading size="xl">{{ $role ? __('Rol bewerken') . ': ' . $role->name : __('Rol aanmaken') }}</flux:heading>
+    <flux:heading size="xl">
+        {{ $role ? __('Rol bewerken: :name', ['name' => $role->name]) : __('Nieuwe rol') }}
+    </flux:heading>
 
     <flux:card>
         <form wire:submit="save" class="space-y-6">
