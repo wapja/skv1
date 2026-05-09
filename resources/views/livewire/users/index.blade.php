@@ -11,29 +11,66 @@
         @endcan
     </div>
 
-    <flux:select wire:model.live="statusFilter" label="{{ __('Status') }}">
-        <option value="">{{ __('Alle statussen') }}</option>
-        <option value="active">{{ __('Actief') }}</option>
-        <option value="pending_activation">{{ __('Wachtend op activering') }}</option>
-        <option value="disabled">{{ __('Uitgeschakeld') }}</option>
-    </flux:select>
+    <div class="flex flex-wrap items-end gap-4">
+        <flux:select wire:model.live="statusFilter" label="{{ __('Status') }}">
+            <option value="">{{ __('Alle statussen') }}</option>
+            <option value="active">{{ __('Actief') }}</option>
+            <option value="pending_activation">{{ __('Wachtend op activering') }}</option>
+            <option value="disabled">{{ __('Uitgeschakeld') }}</option>
+        </flux:select>
+
+        <flux:dropdown>
+            <flux:button icon="adjustments-horizontal" variant="ghost">
+                {{ __('Kolommen') }}
+            </flux:button>
+            <flux:menu>
+                <flux:menu.checkbox.group wire:model.live="selectedColumns">
+                    @foreach ($columns as $key => $label)
+                        <flux:menu.checkbox value="{{ $key }}">{{ $label }}</flux:menu.checkbox>
+                    @endforeach
+                </flux:menu.checkbox.group>
+            </flux:menu>
+        </flux:dropdown>
+    </div>
 
     @if ($users->isEmpty())
         <flux:callout variant="secondary" icon="users">{{ __('Geen gebruikers gevonden.') }}</flux:callout>
     @else
         <flux:table>
             <flux:table.columns>
-                <flux:table.column>{{ __('Naam') }}</flux:table.column>
-                <flux:table.column>{{ __('E-mailadres') }}</flux:table.column>
-                <flux:table.column>{{ __('Status') }}</flux:table.column>
+                @foreach ($columns as $key => $label)
+                    @if (in_array($key, $selectedColumns, true))
+                        <flux:table.column>{{ $label }}</flux:table.column>
+                    @endif
+                @endforeach
                 <flux:table.column>{{ __('Acties') }}</flux:table.column>
             </flux:table.columns>
             <flux:table.rows>
                 @foreach ($users as $user)
                     <flux:table.row :key="$user->id">
-                        <flux:table.cell>{{ $user->name }}</flux:table.cell>
-                        <flux:table.cell>{{ $user->email }}</flux:table.cell>
-                        <flux:table.cell>{{ __($user->status) }}</flux:table.cell>
+                        @foreach ($columns as $key => $label)
+                            @if (in_array($key, $selectedColumns, true))
+                                <flux:table.cell>
+                                    @switch($key)
+                                        @case('name')
+                                            {{ $user->name }}
+                                        @break
+
+                                        @case('status')
+                                            {{ __($user->status) }}
+                                        @break
+
+                                        @case('start_date')
+                                        @case('end_date')
+                                            {{ $user->{$key}?->format('d-m-Y') }}
+                                        @break
+
+                                        @default
+                                            {{ $user->{$key} }}
+                                    @endswitch
+                                </flux:table.cell>
+                            @endif
+                        @endforeach
                         <flux:table.cell>
                             <div class="flex gap-2">
                                 @can('update', $user)

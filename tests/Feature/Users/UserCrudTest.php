@@ -59,6 +59,32 @@ describe('Users Index Livewire', function () {
             ->assertDontSee('Disabled Dan');
     });
 
+    it('hides unselected columns and shows selected ones', function () {
+        User::factory()->for($this->org)->create([
+            'first_name' => 'Bob',
+            'last_name' => 'Tester',
+            'email' => 'bob@demo1.local',
+            'phone' => '0612345678',
+            'internal_id' => 'EMP-42',
+        ]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('selectedColumns', ['name', 'phone'])
+            ->assertSee('0612345678')
+            ->assertDontSee('bob@demo1.local')
+            ->assertDontSee('EMP-42');
+    });
+
+    it('sanitises unknown column keys from session state', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('selectedColumns', ['name', 'bogus_key', 'email'])
+            ->assertSet('selectedColumns', ['name', 'email']);
+    });
+
     it('soft-deletes a user via the delete action', function () {
         $target = User::factory()->for($this->org)->create();
 
