@@ -53,16 +53,9 @@ skv1/
 │   │   ├── Impersonation/
 │   │   └── Invitation/
 │   ├── Http/
-│   │   ├── Controllers/       ← uitsluitend HealthCheck (rest is Livewire)
+│   │   ├── Controllers/       ← uitsluitend HealthCheck (rest is Livewire MFC)
 │   │   ├── Middleware/        ← ResolveTenant, HealthCheckAuth
 │   │   └── Requests/          ← FormRequests
-│   ├── Livewire/              ← alle UI-componenten, gegroepeerd per feature
-│   │   ├── Activity/
-│   │   ├── Auth/
-│   │   ├── Invitations/
-│   │   ├── Organisations/
-│   │   ├── Roles/
-│   │   └── Users/
 │   ├── Mail/                  ← Mailable classes
 │   ├── Models/
 │   │   └── Concerns/          ← reusable model traits
@@ -83,7 +76,7 @@ skv1/
 │   └── superpowers/           ← plans & specs uit eerdere sessies
 ├── lang/                       ← nl.json + vendor/
 ├── public/                     ← Vite-build doelmap
-├── resources/views/            ← Blade-templates en Livewire-views
+├── resources/views/            ← Blade-templates, layouts en Livewire MFC's onder components/<feature>/⚡<naam>/
 ├── routes/
 │   ├── console.php            ← scheduler-jobs
 │   └── web.php                ← alle web-routes
@@ -302,7 +295,7 @@ Centrale rol-toewijzing. Splitst de gevraagde rollen in twee groepen:
 - **Reguliere rollen**: alleen binnen de primaire organisatie van de user (`syncRoles()` met team-scope = primary org).
 - **`super_admin`**: cross-org. Bij toekenning → in elke organisatie toevoegen. Bij intrekking → uit elke organisatie verwijderen. Gebruikt `PermissionRegistrar` om team-context te switchen.
 
-Wordt aangeroepen door `Livewire\Users\Edit` en door `InvitationService`.
+Wordt aangeroepen door de `users.edit` Livewire-component en door `InvitationService`.
 
 ### 6.3 `ImpersonationGuard`
 
@@ -482,25 +475,27 @@ Per-user locale wordt opgeslagen in `users.locale` en geactiveerd door middlewar
 
 ### 11.1 `routes/web.php`
 
+Livewire-routes gebruiken de `Route::livewire('/path', 'component.naam')` macro; de derde kolom hieronder toont de Livewire string-componentnaam.
+
 | Pad | Methode | Middleware | Component / handler |
 |---|---|---|---|
 | `/` | GET | – | Inline redirect naar `dashboard` of `login` |
-| `/login` | GET | `guest` | `Auth\Login` (Livewire) |
-| `/forgot-password` | GET | `guest` | `Auth\ForgotPassword` |
-| `/reset-password/{token}` | GET | `guest` | `Auth\ResetPassword` |
-| `/invitations/{token}/accept` | GET | `signed`, `guest` | `Auth\Activate` |
+| `/login` | GET | `guest` | `auth.login` (Livewire MFC) |
+| `/forgot-password` | GET | `guest` | `auth.forgot-password` |
+| `/reset-password/{token}` | GET | `guest` | `auth.reset-password` |
+| `/invitations/{token}/accept` | GET | `signed`, `guest` | `auth.activate` |
 | `/health-check` | GET | `HealthCheckAuth` | `HealthCheckController` |
 | `/dashboard` | GET | `auth` | view `dashboard` |
-| `/admin/users` | GET | `auth` | `Users\Index` |
-| `/admin/users/{user}/edit` | GET | `auth` | `Users\Edit` |
-| `/admin/invitations` | GET | `auth` | `Invitations\Index` |
-| `/admin/roles` | GET | `auth` | `Roles\Index` |
-| `/admin/roles/create` | GET | `auth` | `Roles\Edit` |
-| `/admin/roles/{role}/edit` | GET | `auth` | `Roles\Edit` |
-| `/admin/organisations` | GET | `auth` | `Organisations\Index` |
-| `/admin/organisations/create` | GET | `auth` | `Organisations\Edit` |
-| `/admin/organisations/{organisation}/edit` | GET | `auth` | `Organisations\Edit` |
-| `/admin/activity` | GET | `auth` | `Activity\Index` |
+| `/admin/users` | GET | `auth` | `users.index` |
+| `/admin/users/{user}/edit` | GET | `auth` | `users.edit` |
+| `/admin/invitations` | GET | `auth` | `invitations.index` |
+| `/admin/roles` | GET | `auth` | `roles.index` |
+| `/admin/roles/create` | GET | `auth` | `roles.edit` |
+| `/admin/roles/{role}/edit` | GET | `auth` | `roles.edit` |
+| `/admin/organisations` | GET | `auth` | `organisations.index` |
+| `/admin/organisations/create` | GET | `auth` | `organisations.edit` |
+| `/admin/organisations/{organisation}/edit` | GET | `auth` | `organisations.edit` |
+| `/admin/activity` | GET | `auth` | `activity.index` |
 | `/impersonate/stop` | POST | `auth` | inline (`ImpersonationGuard::stop`) |
 | `/logout` | POST | `auth` | inline (Auth::logout + session invalidate) |
 

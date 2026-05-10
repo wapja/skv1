@@ -163,16 +163,9 @@ Voor <em>ontwerpkeuzes en de oorspronkelijke opdracht</em> zie <a href="../OUTPU
 │   │   ├── Impersonation/
 │   │   └── Invitation/
 │   ├── Http/
-│   │   ├── Controllers/       ← uitsluitend HealthCheck (rest is Livewire)
+│   │   ├── Controllers/       ← uitsluitend HealthCheck (rest is Livewire MFC)
 │   │   ├── Middleware/        ← ResolveTenant, HealthCheckAuth
 │   │   └── Requests/          ← FormRequests
-│   ├── Livewire/              ← alle UI-componenten, gegroepeerd per feature
-│   │   ├── Activity/
-│   │   ├── Auth/
-│   │   ├── Invitations/
-│   │   ├── Organisations/
-│   │   ├── Roles/
-│   │   └── Users/
 │   ├── Mail/                  ← Mailable classes
 │   ├── Models/
 │   │   └── Concerns/          ← reusable model traits
@@ -193,7 +186,7 @@ Voor <em>ontwerpkeuzes en de oorspronkelijke opdracht</em> zie <a href="../OUTPU
 │   └── superpowers/           ← plans &amp; specs uit eerdere sessies
 ├── lang/                       ← nl.json + vendor/
 ├── public/                     ← Vite-build doelmap
-├── resources/views/            ← Blade-templates en Livewire-views
+├── resources/views/            ← Blade-templates, layouts en Livewire MFC's onder components/&lt;feature&gt;/⚡&lt;naam&gt;/
 ├── routes/
 │   ├── console.php            ← scheduler-jobs
 │   └── web.php                ← alle web-routes
@@ -364,7 +357,7 @@ system.health</code></pre>
     <li><strong>Reguliere rollen</strong>: alleen binnen de primaire organisatie van de user (<code>syncRoles()</code> met team-scope = primary org).</li>
     <li><strong><code>super_admin</code></strong>: cross-org. Bij toekenning → in elke organisatie toevoegen. Bij intrekking → uit elke organisatie verwijderen. Gebruikt <code>PermissionRegistrar</code> om team-context te switchen.</li>
 </ul>
-<p>Wordt aangeroepen door <code>Livewire\Users\Edit</code> en door <code>InvitationService</code>.</p>
+<p>Wordt aangeroepen door de <code>users.edit</code> Livewire-component en door <code>InvitationService</code>.</p>
 
 <h3>6.3 <code>ImpersonationGuard</code></h3>
 <p>Validatie en lifecycle voor impersonation. Voorkomt:</p>
@@ -453,23 +446,23 @@ SESSION_LIFETIME=120</code></pre>
 
 <h2 id="frontend">10. Frontend-architectuur</h2>
 
-<h3>10.1 Geen losse controllers — Livewire 4</h3>
-<p>Op <code>HealthCheckController</code> na bevat <code>app/Http/Controllers/</code> geen UI-controllers. Pagina's zijn <strong>Livewire-componenten</strong> die rechtstreeks aan een route worden gekoppeld:</p>
-<pre><code>Route::get('/admin/users', UserIndex::class)-&gt;name('users.index');</code></pre>
-<p>Dit is het Livewire 4 full-page-component patroon. De Livewire-class bepaalt zélf zijn layout via een <code>#[Layout('components.layouts.app')]</code> attribuut (of via convention).</p>
+<h3>10.1 Geen losse controllers — Livewire 4 multi-file components</h3>
+<p>Op <code>HealthCheckController</code> na bevat <code>app/Http/Controllers/</code> geen UI-controllers. Pagina's zijn <strong>Livewire 4 multi-file componenten</strong> (MFC) die rechtstreeks aan een route worden gekoppeld via de <code>Route::livewire()</code> macro:</p>
+<pre><code>Route::livewire('/admin/users', 'users.index')-&gt;name('users.index');</code></pre>
+<p>De Livewire-class bepaalt zélf zijn layout via een <code>#[Layout('components.layouts.app')]</code> attribuut. Anonymous classes (<code>new class extends Component { … }</code>) bevatten de componentlogica; de <code>render()</code>-methode gebruikt <code>return $this-&gt;view([...])</code> zonder expliciete view-naam — Livewire mapt automatisch op de naast gelegen Blade.</p>
 
 <h3>10.2 Componenten per feature</h3>
-<p>Locatie: <code>app/Livewire/&lt;Feature&gt;/</code></p>
+<p>Locatie: <code>resources/views/components/&lt;feature&gt;/⚡&lt;naam&gt;/</code> met daarin <code>&lt;naam&gt;.php</code> (anonymous class) en <code>&lt;naam&gt;.blade.php</code> (view) naast elkaar. Eventuele scoped partials wonen in dezelfde directory.</p>
 <table>
-<tr><th>Feature</th><th>Componenten</th></tr>
-<tr><td><code>Activity/</code></td><td><code>Index</code></td></tr>
-<tr><td><code>Auth/</code></td><td><code>Login</code>, <code>Activate</code>, <code>ForgotPassword</code>, <code>ResetPassword</code></td></tr>
-<tr><td><code>Invitations/</code></td><td><code>Index</code>, <code>Send</code></td></tr>
-<tr><td><code>Organisations/</code></td><td><code>Index</code>, <code>Edit</code></td></tr>
-<tr><td><code>Roles/</code></td><td><code>Index</code>, <code>Edit</code></td></tr>
-<tr><td><code>Users/</code></td><td><code>Index</code>, <code>Edit</code>, <code>Impersonate</code></td></tr>
+<tr><th>Feature</th><th>Componenten</th><th>String-naam(en)</th></tr>
+<tr><td><code>activity/</code></td><td><code>Index</code></td><td><code>activity.index</code></td></tr>
+<tr><td><code>auth/</code></td><td><code>Login</code>, <code>Activate</code>, <code>ForgotPassword</code>, <code>ResetPassword</code></td><td><code>auth.login</code>, <code>auth.activate</code>, <code>auth.forgot-password</code>, <code>auth.reset-password</code></td></tr>
+<tr><td><code>invitations/</code></td><td><code>Index</code> (+ <code>column-filter</code> partial), <code>Send</code></td><td><code>invitations.index</code>, <code>invitations.send</code></td></tr>
+<tr><td><code>organisations/</code></td><td><code>Index</code>, <code>Edit</code></td><td><code>organisations.index</code>, <code>organisations.edit</code></td></tr>
+<tr><td><code>roles/</code></td><td><code>Index</code>, <code>Edit</code></td><td><code>roles.index</code>, <code>roles.edit</code></td></tr>
+<tr><td><code>users/</code></td><td><code>Index</code> (+ <code>column-filter</code> partial), <code>Edit</code>, <code>Impersonate</code></td><td><code>users.index</code>, <code>users.edit</code>, <code>users.impersonate</code></td></tr>
 </table>
-<p>Bijbehorende Blade-views in <code>resources/views/livewire/&lt;feature&gt;/</code>.</p>
+<p>Tests refereren componenten via die string-naam: <code>Livewire::test('users.index')</code>. Routes idem via <code>Route::livewire('/path', 'users.index')</code>. De ⚡-prefix in de directory-naam is Livewire's conventie om MFC's visueel te onderscheiden van gewone Blade anonymous components in dezelfde <code>components/</code> boom; bij component-resolutie wordt de prefix gestript.</p>
 
 <h3>10.3 Layouts</h3>
 <p>Locatie: <code>resources/views/components/layouts/</code></p>
@@ -494,25 +487,26 @@ SESSION_LIFETIME=120</code></pre>
 <h2 id="routes">11. Routes</h2>
 
 <h3>11.1 <code>routes/web.php</code></h3>
+<p>Livewire-routes gebruiken de <code>Route::livewire('/path', 'component.naam')</code> macro; de derde kolom hieronder toont de Livewire string-componentnaam.</p>
 <table>
 <tr><th>Pad</th><th>Methode</th><th>Middleware</th><th>Component / handler</th></tr>
 <tr><td><code>/</code></td><td>GET</td><td>–</td><td>Inline redirect naar <code>dashboard</code> of <code>login</code></td></tr>
-<tr><td><code>/login</code></td><td>GET</td><td><code>guest</code></td><td><code>Auth\Login</code> (Livewire)</td></tr>
-<tr><td><code>/forgot-password</code></td><td>GET</td><td><code>guest</code></td><td><code>Auth\ForgotPassword</code></td></tr>
-<tr><td><code>/reset-password/{token}</code></td><td>GET</td><td><code>guest</code></td><td><code>Auth\ResetPassword</code></td></tr>
-<tr><td><code>/invitations/{token}/accept</code></td><td>GET</td><td><code>signed</code>, <code>guest</code></td><td><code>Auth\Activate</code></td></tr>
+<tr><td><code>/login</code></td><td>GET</td><td><code>guest</code></td><td><code>auth.login</code> (Livewire MFC)</td></tr>
+<tr><td><code>/forgot-password</code></td><td>GET</td><td><code>guest</code></td><td><code>auth.forgot-password</code></td></tr>
+<tr><td><code>/reset-password/{token}</code></td><td>GET</td><td><code>guest</code></td><td><code>auth.reset-password</code></td></tr>
+<tr><td><code>/invitations/{token}/accept</code></td><td>GET</td><td><code>signed</code>, <code>guest</code></td><td><code>auth.activate</code></td></tr>
 <tr><td><code>/health-check</code></td><td>GET</td><td><code>HealthCheckAuth</code></td><td><code>HealthCheckController</code></td></tr>
 <tr><td><code>/dashboard</code></td><td>GET</td><td><code>auth</code></td><td>view <code>dashboard</code></td></tr>
-<tr><td><code>/admin/users</code></td><td>GET</td><td><code>auth</code></td><td><code>Users\Index</code></td></tr>
-<tr><td><code>/admin/users/{user}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>Users\Edit</code></td></tr>
-<tr><td><code>/admin/invitations</code></td><td>GET</td><td><code>auth</code></td><td><code>Invitations\Index</code></td></tr>
-<tr><td><code>/admin/roles</code></td><td>GET</td><td><code>auth</code></td><td><code>Roles\Index</code></td></tr>
-<tr><td><code>/admin/roles/create</code></td><td>GET</td><td><code>auth</code></td><td><code>Roles\Edit</code></td></tr>
-<tr><td><code>/admin/roles/{role}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>Roles\Edit</code></td></tr>
-<tr><td><code>/admin/organisations</code></td><td>GET</td><td><code>auth</code></td><td><code>Organisations\Index</code></td></tr>
-<tr><td><code>/admin/organisations/create</code></td><td>GET</td><td><code>auth</code></td><td><code>Organisations\Edit</code></td></tr>
-<tr><td><code>/admin/organisations/{organisation}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>Organisations\Edit</code></td></tr>
-<tr><td><code>/admin/activity</code></td><td>GET</td><td><code>auth</code></td><td><code>Activity\Index</code></td></tr>
+<tr><td><code>/admin/users</code></td><td>GET</td><td><code>auth</code></td><td><code>users.index</code></td></tr>
+<tr><td><code>/admin/users/{user}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>users.edit</code></td></tr>
+<tr><td><code>/admin/invitations</code></td><td>GET</td><td><code>auth</code></td><td><code>invitations.index</code></td></tr>
+<tr><td><code>/admin/roles</code></td><td>GET</td><td><code>auth</code></td><td><code>roles.index</code></td></tr>
+<tr><td><code>/admin/roles/create</code></td><td>GET</td><td><code>auth</code></td><td><code>roles.edit</code></td></tr>
+<tr><td><code>/admin/roles/{role}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>roles.edit</code></td></tr>
+<tr><td><code>/admin/organisations</code></td><td>GET</td><td><code>auth</code></td><td><code>organisations.index</code></td></tr>
+<tr><td><code>/admin/organisations/create</code></td><td>GET</td><td><code>auth</code></td><td><code>organisations.edit</code></td></tr>
+<tr><td><code>/admin/organisations/{organisation}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>organisations.edit</code></td></tr>
+<tr><td><code>/admin/activity</code></td><td>GET</td><td><code>auth</code></td><td><code>activity.index</code></td></tr>
 <tr><td><code>/impersonate/stop</code></td><td>POST</td><td><code>auth</code></td><td>inline (<code>ImpersonationGuard::stop</code>)</td></tr>
 <tr><td><code>/logout</code></td><td>POST</td><td><code>auth</code></td><td>inline (Auth::logout + session invalidate)</td></tr>
 </table>
