@@ -8,11 +8,19 @@ use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Index extends Component
 {
+    use WithPagination;
+
+    public const PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
+
     #[Url(as: 'status')]
     public string $statusFilter = '';
+
+    #[Session]
+    public int $perPage = 10;
 
     /** @var array<int,string> */
     #[Session]
@@ -54,13 +62,26 @@ class Index extends Component
             $query->where('status', $this->statusFilter);
         }
 
-        return $query->get();
+        return $query->paginate($this->perPage);
     }
 
     public function updatedSelectedColumns(): void
     {
         $valid = array_keys($this->availableColumns());
         $this->selectedColumns = array_values(array_intersect($valid, $this->selectedColumns));
+    }
+
+    public function updatedPerPage(): void
+    {
+        if (! in_array($this->perPage, self::PER_PAGE_OPTIONS, true)) {
+            $this->perPage = 10;
+        }
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter(): void
+    {
+        $this->resetPage();
     }
 
     #[Layout('components.layouts.app')]

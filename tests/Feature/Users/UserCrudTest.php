@@ -107,6 +107,46 @@ describe('Users Index Livewire', function () {
 
         expect($this->actor->fresh())->not->toBeNull();
     });
+
+    it('paginates users with a default of 10 per page', function () {
+        User::factory()->count(15)->for($this->org)->create();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->assertSet('perPage', 10)
+            ->assertViewHas('users', fn ($users) => $users->count() === 10 && $users->total() >= 16);
+    });
+
+    it('caps results when perPage is changed to 5', function () {
+        User::factory()->count(15)->for($this->org)->create();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('perPage', 5)
+            ->assertViewHas('users', fn ($users) => $users->count() === 5);
+    });
+
+    it('clamps an invalid perPage value back to 10', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('perPage', 7)
+            ->assertSet('perPage', 10);
+    });
+
+    it('resets to page 1 when perPage changes', function () {
+        User::factory()->count(30)->for($this->org)->create();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->set('perPage', 25)
+            ->assertSet('paginators.page', 1);
+    });
 });
 
 describe('Users Edit Livewire', function () {

@@ -11,26 +11,34 @@
         @endcan
     </div>
 
-    <div class="flex flex-wrap items-end gap-4">
-        <flux:select wire:model.live="statusFilter" label="{{ __('Status') }}">
-            <option value="">{{ __('Alle statussen') }}</option>
-            <option value="active">{{ __('Actief') }}</option>
-            <option value="pending_activation">{{ __('Wachtend op activering') }}</option>
-            <option value="disabled">{{ __('Uitgeschakeld') }}</option>
-        </flux:select>
+    <div class="flex items-end justify-between gap-4">
+        <div class="flex flex-wrap items-end gap-4">
+            <flux:select wire:model.live="statusFilter" label="{{ __('Status') }}">
+                <option value="">{{ __('Alle statussen') }}</option>
+                <option value="active">{{ __('Actief') }}</option>
+                <option value="pending_activation">{{ __('Wachtend op activering') }}</option>
+                <option value="disabled">{{ __('Uitgeschakeld') }}</option>
+            </flux:select>
 
-        <flux:dropdown>
-            <flux:button icon="adjustments-horizontal" variant="ghost">
-                {{ __('Kolommen') }}
-            </flux:button>
-            <flux:menu>
-                <flux:menu.checkbox.group wire:model.live="selectedColumns">
-                    @foreach ($columns as $key => $label)
-                        <flux:menu.checkbox value="{{ $key }}">{{ $label }}</flux:menu.checkbox>
-                    @endforeach
-                </flux:menu.checkbox.group>
-            </flux:menu>
-        </flux:dropdown>
+            <flux:dropdown>
+                <flux:button icon="adjustments-horizontal" variant="ghost">
+                    {{ __('Kolommen') }}
+                </flux:button>
+                <flux:menu>
+                    <flux:menu.checkbox.group wire:model.live="selectedColumns">
+                        @foreach ($columns as $key => $label)
+                            <flux:menu.checkbox value="{{ $key }}">{{ $label }}</flux:menu.checkbox>
+                        @endforeach
+                    </flux:menu.checkbox.group>
+                </flux:menu>
+            </flux:dropdown>
+        </div>
+
+        <flux:select wire:model.live="perPage" label="{{ __('Per pagina') }}">
+            @foreach (App\Livewire\Users\Index::PER_PAGE_OPTIONS as $option)
+                <option value="{{ $option }}">{{ $option }}</option>
+            @endforeach
+        </flux:select>
     </div>
 
     @if ($users->isEmpty())
@@ -94,6 +102,8 @@
                 @endforeach
             </flux:table.rows>
         </flux:table>
+
+        {{ $users->links() }}
     @endif
 
     <livewire:invitations.pending-list />
