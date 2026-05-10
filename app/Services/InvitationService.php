@@ -134,7 +134,10 @@ class InvitationService
         DB::transaction(function () use ($invitation, $actor, $user) {
             Mail::to($user->email)->queue(new InvitationMail($invitation));
 
-            $invitation->update(['reminder_sent_at' => now()]);
+            $invitation->update([
+                'reminder_sent_at' => now(),
+                'expires_at'       => now()->addDays(7),
+            ]);
 
             activity('invitations')
                 ->performedOn($invitation)

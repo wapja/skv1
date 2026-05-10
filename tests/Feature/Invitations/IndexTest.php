@@ -308,4 +308,47 @@ describe('Invitations Index Livewire', function () {
             ->set('selectedColumns', ['name', 'status'])
             ->assertSet('filters.email', '');
     });
+
+    it('cancel-action soft-deletes the user (delegates to InvitationService)', function () {
+        $u = User::factory()->for($this->org)->create();
+        $inv = Invitation::factory()->create(['user_id' => $u->id, 'invited_by' => $this->actor->id]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('cancel', $inv->id)
+            ->assertHasNoErrors();
+
+        expect(User::withTrashed()->find($u->id)->trashed())->toBeTrue();
+    });
+
+    it('resend-action calls InvitationService::resendReminder', function () {
+        $u = User::factory()->for($this->org)->create();
+        $inv = Invitation::factory()->create(['user_id' => $u->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(1)]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('resend', $inv->id)
+            ->assertHasNoErrors();
+
+        $inv->refresh();
+        expect($inv->reminder_sent_at)->not->toBeNull()
+            ->and($inv->expires_at->greaterThan(now()->addDays(6)))->toBeTrue();
+    });
+
+    it('resets to page 1 on sort change', function () {
+        $invited = User::factory()->count(15)->for($this->org)->create();
+        foreach ($invited as $u) {
+            Invitation::factory()->create(['user_id' => $u->id, 'invited_by' => $this->actor->id]);
+        }
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('perPage', 5)
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->call('sort', 'email')
+            ->assertSet('paginators.page', 1);
+    });
 });

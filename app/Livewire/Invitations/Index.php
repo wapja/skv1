@@ -4,8 +4,10 @@ namespace App\Livewire\Invitations;
 
 use App\Models\Invitation;
 use App\Models\User;
+use App\Services\InvitationService;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -124,6 +126,31 @@ class Index extends Component
             $this->perPage = 10;
         }
         $this->resetPage();
+    }
+
+    public function cancel(int $invitationId, InvitationService $service): void
+    {
+        abort_unless(auth()->user()?->can('invitations.cancel'), 403);
+
+        $invitation = Invitation::findOrFail($invitationId);
+        $service->cancel($invitation, auth()->user());
+
+        $this->dispatch('invitation-cancelled');
+    }
+
+    public function resend(int $invitationId, InvitationService $service): void
+    {
+        abort_unless(auth()->user()?->can('invitations.send'), 403);
+
+        $invitation = Invitation::findOrFail($invitationId);
+        $service->resendReminder($invitation, auth()->user());
+    }
+
+    #[On('invitation-sent')]
+    #[On('invitation-cancelled')]
+    public function refresh(): void
+    {
+        // Trigger re-render
     }
 
     public function invitations()
