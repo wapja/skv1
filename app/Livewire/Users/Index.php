@@ -104,6 +104,12 @@ class Index extends Component
     {
         $valid = array_keys($this->availableColumns());
         $this->selectedColumns = array_values(array_intersect($valid, $this->selectedColumns));
+
+        foreach (array_keys($this->filters) as $key) {
+            if (! in_array($key, $this->selectedColumns, true)) {
+                $this->filters[$key] = '';
+            }
+        }
     }
 
     public function updatedPerPage(): void

@@ -322,6 +322,16 @@ describe('Users Index Livewire', function () {
             ->set('filters.name', 'x')
             ->assertSet('paginators.page', 1);
     });
+
+    it('unselecting a column clears its active filter', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.email', 'demo1')
+            ->assertSet('filters.email', 'demo1')
+            ->set('selectedColumns', ['name', 'status'])
+            ->assertSet('filters.email', '');
+    });
 });
 
 describe('Users Edit Livewire', function () {
