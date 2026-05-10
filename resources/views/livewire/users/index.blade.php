@@ -12,20 +12,18 @@
     </div>
 
     <div class="flex items-end justify-between gap-4">
-        <div class="flex flex-wrap items-end gap-4">
-            <flux:dropdown>
-                <flux:button icon="adjustments-horizontal" variant="ghost">
-                    {{ __('Kolommen') }}
-                </flux:button>
-                <flux:menu>
-                    <flux:menu.checkbox.group wire:model.live="selectedColumns">
-                        @foreach ($columns as $key => $label)
-                            <flux:menu.checkbox value="{{ $key }}">{{ $label }}</flux:menu.checkbox>
-                        @endforeach
-                    </flux:menu.checkbox.group>
-                </flux:menu>
-            </flux:dropdown>
-        </div>
+        <flux:dropdown>
+            <flux:button icon="adjustments-horizontal" variant="ghost">
+                {{ __('Kolommen') }}
+            </flux:button>
+            <flux:menu>
+                <flux:menu.checkbox.group wire:model.live="selectedColumns">
+                    @foreach ($columns as $key => $label)
+                        <flux:menu.checkbox value="{{ $key }}">{{ $label }}</flux:menu.checkbox>
+                    @endforeach
+                </flux:menu.checkbox.group>
+            </flux:menu>
+        </flux:dropdown>
 
         <flux:select wire:model.live="perPage" label="{{ __('Per pagina') }}">
             @foreach (App\Livewire\Users\Index::PER_PAGE_OPTIONS as $option)
@@ -34,19 +32,37 @@
         </flux:select>
     </div>
 
-    @if ($users->isEmpty())
+    @if ($users->total() === 0 && $this->hasNoFilters())
         <flux:callout variant="secondary" icon="users">{{ __('Geen gebruikers gevonden.') }}</flux:callout>
     @else
         <flux:table>
             <flux:table.columns>
                 @foreach ($columns as $key => $label)
                     @if (in_array($key, $selectedColumns, true))
-                        <flux:table.column>{{ $label }}</flux:table.column>
+                        <flux:table.column
+                            sortable
+                            :sorted="$sortColumn === $key"
+                            :direction="$sortColumn === $key ? $sortDirection : null"
+                            wire:click="sort('{{ $key }}')"
+                            style="cursor:pointer">
+                            {{ $label }}
+                        </flux:table.column>
                     @endif
                 @endforeach
                 <flux:table.column>{{ __('Acties') }}</flux:table.column>
             </flux:table.columns>
             <flux:table.rows>
+                <flux:table.row class="bg-zinc-50/60 dark:bg-white/5">
+                    @foreach ($columns as $key => $label)
+                        @if (in_array($key, $selectedColumns, true))
+                            <flux:table.cell class="py-2">
+                                @include('livewire.users.partials.column-filter', ['key' => $key])
+                            </flux:table.cell>
+                        @endif
+                    @endforeach
+                    <flux:table.cell></flux:table.cell>
+                </flux:table.row>
+
                 @foreach ($users as $user)
                     <flux:table.row :key="$user->id">
                         @foreach ($columns as $key => $label)
@@ -95,6 +111,15 @@
                 @endforeach
             </flux:table.rows>
         </flux:table>
+
+        @if ($users->total() === 0)
+            <flux:callout variant="secondary" icon="funnel">
+                {{ __('Geen gebruikers met deze filters.') }}
+                <flux:button size="sm" variant="ghost" wire:click="clearFilters">
+                    {{ __('Filters wissen') }}
+                </flux:button>
+            </flux:callout>
+        @endif
 
         {{ $users->links() }}
     @endif
