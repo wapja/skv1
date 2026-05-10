@@ -112,10 +112,10 @@ describe('Invitations Index Livewire', function () {
     });
 
     it('status filter pending shows only open + active-user invitations', function () {
-        $u_pending  = User::factory()->for($this->org)->create();
+        $u_pending = User::factory()->for($this->org)->create();
         $u_accepted = User::factory()->for($this->org)->create();
-        $u_expired  = User::factory()->for($this->org)->create();
-        $u_cancelled= User::factory()->for($this->org)->create();
+        $u_expired = User::factory()->for($this->org)->create();
+        $u_cancelled = User::factory()->for($this->org)->create();
 
         Invitation::factory()->create(['user_id' => $u_pending->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
         Invitation::factory()->create(['user_id' => $u_accepted->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => now()]);
@@ -203,10 +203,10 @@ describe('Invitations Index Livewire', function () {
     });
 
     it('derives status from accepted_at / expires_at / user.deleted_at', function () {
-        $u_pending  = User::factory()->for($this->org)->create();
+        $u_pending = User::factory()->for($this->org)->create();
         $u_accepted = User::factory()->for($this->org)->create();
-        $u_expired  = User::factory()->for($this->org)->create();
-        $u_cancelled= User::factory()->for($this->org)->create();
+        $u_expired = User::factory()->for($this->org)->create();
+        $u_cancelled = User::factory()->for($this->org)->create();
 
         $i_p = Invitation::factory()->create(['user_id' => $u_pending->id,   'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
         $i_a = Invitation::factory()->create(['user_id' => $u_accepted->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => now()]);
@@ -230,10 +230,10 @@ describe('Invitations Index Livewire', function () {
     });
 
     it('sorts by status in stable order (accepted → pending → expired → cancelled)', function () {
-        $u_pending  = User::factory()->for($this->org)->create();
+        $u_pending = User::factory()->for($this->org)->create();
         $u_accepted = User::factory()->for($this->org)->create();
-        $u_expired  = User::factory()->for($this->org)->create();
-        $u_cancelled= User::factory()->for($this->org)->create();
+        $u_expired = User::factory()->for($this->org)->create();
+        $u_cancelled = User::factory()->for($this->org)->create();
 
         Invitation::factory()->create(['user_id' => $u_pending->id,   'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
         Invitation::factory()->create(['user_id' => $u_accepted->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => now()]);
@@ -247,6 +247,7 @@ describe('Invitations Index Livewire', function () {
             ->call('sort', 'status')
             ->assertViewHas('invitations', function ($invs) use ($u_accepted, $u_pending, $u_expired, $u_cancelled) {
                 $userIds = $invs->getCollection()->pluck('user_id')->all();
+
                 return $userIds === [$u_accepted->id, $u_pending->id, $u_expired->id, $u_cancelled->id];
             });
     });
@@ -360,14 +361,14 @@ describe('Invitations Index Livewire', function () {
 
         // Switch tenant context to seed an other-org invitation
         app()->instance('currentOrganisation', $other);
-        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($other->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($other->id);
         $otherUser = User::factory()->for($other)->create(['email' => 'other@demo2.local']);
         $otherActor = User::factory()->for($other)->create();
         Invitation::factory()->create(['user_id' => $otherUser->id, 'invited_by' => $otherActor->id]);
 
         // Back to demo1 context
         app()->instance('currentOrganisation', $this->org);
-        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
 
         $this->actingAs($this->actor);
 

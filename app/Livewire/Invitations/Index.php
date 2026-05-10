@@ -49,9 +49,16 @@ class Index extends Component
 
     public function status(Invitation $invitation): string
     {
-        if ($invitation->accepted_at !== null)        return 'accepted';
-        if ($invitation->user?->trashed())             return 'cancelled';
-        if ($invitation->expires_at?->isPast())        return 'expired';
+        if ($invitation->accepted_at !== null) {
+            return 'accepted';
+        }
+        if ($invitation->user?->trashed()) {
+            return 'cancelled';
+        }
+        if ($invitation->expires_at?->isPast()) {
+            return 'expired';
+        }
+
         return 'pending';
     }
 
@@ -59,12 +66,12 @@ class Index extends Component
     public function availableColumns(): array
     {
         return [
-            'email'      => __('E-mailadres'),
-            'name'       => __('Naam'),
-            'status'     => __('Status'),
-            'inviter'    => __('Uitgenodigd door'),
+            'email' => __('E-mailadres'),
+            'name' => __('Naam'),
+            'status' => __('Status'),
+            'inviter' => __('Uitgenodigd door'),
             'expires_at' => __('Verloopt op'),
-            'sent_at'    => __('Verzonden op'),
+            'sent_at' => __('Verzonden op'),
         ];
     }
 
@@ -179,7 +186,7 @@ class Index extends Component
                 'name' => $query->whereHas('user', function ($q) use ($value) {
                     $like = '%'.$value.'%';
                     $q->withTrashed()->where(fn ($qq) => $qq
-                        ->where('first_name',  'ILIKE', $like)
+                        ->where('first_name', 'ILIKE', $like)
                         ->orWhere('middle_name', 'ILIKE', $like)
                         ->orWhere('last_name', 'ILIKE', $like)
                     );
@@ -191,7 +198,7 @@ class Index extends Component
                 'status' => $this->applyStatusFilter($query, $value),
 
                 'expires_at' => $query->whereDate('invitations.expires_at', '>=', $value),
-                'sent_at'    => $query->whereDate('invitations.created_at', '>=', $value),
+                'sent_at' => $query->whereDate('invitations.created_at', '>=', $value),
 
                 default => null,
             };
@@ -221,13 +228,14 @@ class Index extends Component
     {
         if ($this->sortColumn === null) {
             $query->orderByDesc('invitations.created_at');
+
             return;
         }
 
         $direction = $this->sortDirection === 'desc' ? 'desc' : 'asc';
 
         match ($this->sortColumn) {
-            'sent_at'    => $query->orderBy('invitations.created_at', $direction),
+            'sent_at' => $query->orderBy('invitations.created_at', $direction),
             'expires_at' => $query->orderBy('invitations.expires_at', $direction),
 
             'email' => $query->orderBy(
@@ -273,6 +281,7 @@ class Index extends Component
                 return false;
             }
         }
+
         return true;
     }
 

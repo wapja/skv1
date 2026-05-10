@@ -136,7 +136,7 @@ class InvitationService
 
             $invitation->update([
                 'reminder_sent_at' => now(),
-                'expires_at'       => now()->addDays(7),
+                'expires_at' => now()->addDays(7),
             ]);
 
             activity('invitations')
