@@ -344,6 +344,19 @@ describe('Users Index Livewire', function () {
             ->call('sort', 'email')
             ->assertSet('paginators.page', 1);
     });
+
+    it('shows "Uitgenodigde gebruikers"-knop voor gebruikers met invitations.send permissie', function () {
+        $this->actingAs($this->actor);
+        Livewire::test(\App\Livewire\Users\Index::class)
+            ->assertSee('Uitgenodigde gebruikers');
+    });
+
+    it('verbergt "Uitgenodigde gebruikers"-knop voor gebruikers zonder invitations.send', function () {
+        $regular = User::factory()->for($this->org)->create();
+        $this->actingAs($regular);
+        Livewire::test(\App\Livewire\Users\Index::class)
+            ->assertDontSee('Uitgenodigde gebruikers');
+    });
 });
 
 describe('Users Edit Livewire', function () {

@@ -6,6 +6,11 @@
                 {{ __('Beheer de gebruikers van :org.', ['org' => tenant()?->name ?? config('app.name')]) }}
             </flux:text>
         </div>
+        @can('invitations.send')
+            <flux:button :href="route('invitations.index')" variant="ghost" wire:navigate>
+                {{ __('Uitgenodigde gebruikers') }}
+            </flux:button>
+        @endcan
         @can('create', App\Models\User::class)
             <livewire:invitations.send />
         @endcan
@@ -123,8 +128,6 @@
 
         {{ $users->links() }}
     @endif
-
-    <livewire:invitations.pending-list />
 
     <livewire:users.impersonate />
 </div>

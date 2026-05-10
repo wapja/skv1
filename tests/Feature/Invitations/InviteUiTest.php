@@ -1,7 +1,6 @@
 <?php
 
 use App\Livewire\Auth\Activate;
-use App\Livewire\Invitations\PendingList;
 use App\Livewire\Invitations\Send;
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
@@ -271,95 +270,6 @@ describe('Send invitation Livewire component', function () {
             ->set('roles', ['super_admin'])
             ->call('send')
             ->assertHasErrors(['roles.0']);
-    });
-});
-
-describe('PendingList Livewire component', function () {
-    it('lists only pending invitations belonging to the current organisation', function () {
-        $other = Organisation::factory()->create(['slug' => 'demo2']);
-
-        $localInv = app(InvitationService::class)->invite(
-            firstName: 'Local',
-            middleName: null,
-            lastName: 'User',
-            email: 'local@demo1.local',
-            locale: 'nl',
-            roles: [],
-            invitedBy: $this->actor,
-            organisationId: $this->org->id,
-        );
-
-        // simulate an invitation in another org by manually creating it
-        app()->instance('currentOrganisation', $other);
-        app(PermissionRegistrar::class)->setPermissionsTeamId($other->id);
-        $otherActor = User::factory()->for($other)->create();
-        app(InvitationService::class)->invite(
-            firstName: 'Other',
-            middleName: null,
-            lastName: 'User',
-            email: 'other@demo2.local',
-            locale: 'nl',
-            roles: [],
-            invitedBy: $otherActor,
-            organisationId: $other->id,
-        );
-
-        // back to demo1 context
-        app()->instance('currentOrganisation', $this->org);
-        app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
-
-        $this->actingAs($this->actor);
-
-        Livewire::test(PendingList::class)
-            ->assertSee('local@demo1.local')
-            ->assertDontSee('other@demo2.local');
-    });
-
-    it('cancels an invitation when the cancel button is invoked', function () {
-        Mail::fake();
-
-        $invitation = app(InvitationService::class)->invite(
-            firstName: 'Cancel',
-            middleName: null,
-            lastName: 'User',
-            email: 'cancel@demo1.local',
-            locale: 'nl',
-            roles: [],
-            invitedBy: $this->actor,
-            organisationId: $this->org->id,
-        );
-
-        $this->actingAs($this->actor);
-
-        Livewire::test(PendingList::class)
-            ->call('cancel', $invitation->id)
-            ->assertHasNoErrors();
-
-        expect(User::withTrashed()->find($invitation->user_id)->trashed())->toBeTrue();
-    });
-
-    it('resends a reminder when invoked', function () {
-        Mail::fake();
-
-        $invitation = app(InvitationService::class)->invite(
-            firstName: 'Remind',
-            middleName: null,
-            lastName: 'User',
-            email: 'remind@demo1.local',
-            locale: 'nl',
-            roles: [],
-            invitedBy: $this->actor,
-            organisationId: $this->org->id,
-        );
-
-        $this->actingAs($this->actor);
-
-        Livewire::test(PendingList::class)
-            ->call('resend', $invitation->id)
-            ->assertHasNoErrors();
-
-        expect($invitation->fresh()->reminder_sent_at)->not->toBeNull();
-        Mail::assertQueued(InvitationMail::class, 2);
     });
 });
 

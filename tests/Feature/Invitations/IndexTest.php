@@ -351,4 +351,28 @@ describe('Invitations Index Livewire', function () {
             ->call('sort', 'email')
             ->assertSet('paginators.page', 1);
     });
+
+    it('lists invitations of the current organisation only', function () {
+        $other = Organisation::factory()->create(['slug' => 'demo2']);
+
+        $localUser = User::factory()->for($this->org)->create(['email' => 'local@demo1.local']);
+        Invitation::factory()->create(['user_id' => $localUser->id, 'invited_by' => $this->actor->id]);
+
+        // Switch tenant context to seed an other-org invitation
+        app()->instance('currentOrganisation', $other);
+        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($other->id);
+        $otherUser = User::factory()->for($other)->create(['email' => 'other@demo2.local']);
+        $otherActor = User::factory()->for($other)->create();
+        Invitation::factory()->create(['user_id' => $otherUser->id, 'invited_by' => $otherActor->id]);
+
+        // Back to demo1 context
+        app()->instance('currentOrganisation', $this->org);
+        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->assertSee('local@demo1.local')
+            ->assertDontSee('other@demo2.local');
+    });
 });
