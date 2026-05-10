@@ -275,7 +275,8 @@ describe('Users Index Livewire', function () {
             ->set('filters.locale', 'en')
             ->assertSee('en1@demo1.local')
             ->assertDontSee('nl1@demo1.local')
-            ->assertDontSee('nl2@demo1.local');
+            ->assertDontSee('nl2@demo1.local')
+            ->assertDontSee('admin@demo1.local');
     });
 });
 
