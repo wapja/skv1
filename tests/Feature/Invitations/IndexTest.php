@@ -65,4 +65,36 @@ describe('Invitations Index Livewire', function () {
         $this->actingAs($regular);
         Livewire::test(Index::class)->assertStatus(403);
     });
+
+    it('filters email case-insensitively via ILIKE contains', function () {
+        $u1 = User::factory()->for($this->org)->create(['email' => 'Alice@demo1.local']);
+        $u2 = User::factory()->for($this->org)->create(['email' => 'BOB@demo1.local']);
+        $u3 = User::factory()->for($this->org)->create(['email' => 'carol@demo1.local']);
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id]);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id]);
+        Invitation::factory()->create(['user_id' => $u3->id, 'invited_by' => $this->actor->id]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.email', 'ALICE')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->user->email === 'Alice@demo1.local');
+    });
+
+    it('name filter matches first_name, middle_name, or last_name on related user', function () {
+        $u1 = User::factory()->for($this->org)->create(['first_name' => 'Anna', 'last_name' => 'Zijlstra']);
+        $u2 = User::factory()->for($this->org)->create(['first_name' => 'Bart', 'middle_name' => 'Anna', 'last_name' => 'Pieters']);
+        $u3 = User::factory()->for($this->org)->create(['first_name' => 'Bert', 'last_name' => 'Anna']);
+        $u4 = User::factory()->for($this->org)->create(['first_name' => 'Carl', 'last_name' => 'Yssel']);
+        foreach ([$u1, $u2, $u3, $u4] as $u) {
+            Invitation::factory()->create(['user_id' => $u->id, 'invited_by' => $this->actor->id]);
+        }
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.name', 'Anna')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 3);
+    });
 });

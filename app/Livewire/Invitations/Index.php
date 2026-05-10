@@ -97,9 +97,34 @@ class Index extends Component
             'inviter',
         ]);
 
+        $this->applyFilters($query);
         $this->applySort($query);
 
         return $query->paginate($this->perPage);
+    }
+
+    protected function applyFilters(Builder $query): void
+    {
+        foreach ($this->filters as $key => $value) {
+            if ($value === '' || $value === null) {
+                continue;
+            }
+            match ($key) {
+                'email' => $query->whereHas('user', fn ($q) => $q->withTrashed()
+                    ->where('email', 'ILIKE', '%'.$value.'%')),
+
+                'name' => $query->whereHas('user', function ($q) use ($value) {
+                    $like = '%'.$value.'%';
+                    $q->withTrashed()->where(fn ($qq) => $qq
+                        ->where('first_name',  'ILIKE', $like)
+                        ->orWhere('middle_name', 'ILIKE', $like)
+                        ->orWhere('last_name', 'ILIKE', $like)
+                    );
+                }),
+
+                default => null, // andere arms volgen in Tasks 3-5
+            };
+        }
     }
 
     protected function applySort(Builder $query): void
