@@ -278,6 +278,19 @@ describe('Users Index Livewire', function () {
             ->assertDontSee('nl2@demo1.local')
             ->assertDontSee('admin@demo1.local');
     });
+
+    it('start_date filter is "≥" — earlier dates are excluded', function () {
+        User::factory()->for($this->org)->create(['email' => 'past@demo1.local',    'start_date' => '2025-01-15']);
+        User::factory()->for($this->org)->create(['email' => 'cutoff@demo1.local',  'start_date' => '2026-01-01']);
+        User::factory()->for($this->org)->create(['email' => 'future@demo1.local',  'start_date' => '2026-06-01']);
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.start_date', '2026-01-01')
+            ->assertSee('cutoff@demo1.local')
+            ->assertSee('future@demo1.local')
+            ->assertDontSee('past@demo1.local');
+    });
 });
 
 describe('Users Edit Livewire', function () {

@@ -138,6 +138,8 @@ class Index extends Component
                     => $query->where($key, 'ILIKE', '%' . $value . '%'),
                 'status', 'locale'
                     => $query->where($key, $value),
+                'start_date', 'end_date'
+                    => $query->whereDate($key, '>=', $value),
                 default => null,
             };
         }
