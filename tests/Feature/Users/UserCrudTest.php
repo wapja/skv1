@@ -249,6 +249,21 @@ describe('Users Index Livewire', function () {
             ->assertDontSee('bob@demo1.local')
             ->assertDontSee('carol@demo1.local');
     });
+
+    it('name filter matches first_name, middle_name, or last_name', function () {
+        User::factory()->for($this->org)->create(['first_name' => 'Anna',  'middle_name' => null,   'last_name' => 'Zijlstra']);
+        User::factory()->for($this->org)->create(['first_name' => 'Bart',  'middle_name' => 'Anna', 'last_name' => 'Pieters']);
+        User::factory()->for($this->org)->create(['first_name' => 'Bert',  'middle_name' => null,   'last_name' => 'Anna']);
+        User::factory()->for($this->org)->create(['first_name' => 'Carl',  'middle_name' => null,   'last_name' => 'Yssel']);
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.name', 'Anna')
+            ->assertSee('Zijlstra')
+            ->assertSee('Pieters')
+            ->assertSee('Bert')
+            ->assertDontSee('Yssel');
+    });
 });
 
 describe('Users Edit Livewire', function () {

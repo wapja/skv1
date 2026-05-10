@@ -137,6 +137,12 @@ class Index extends Component
                 continue;
             }
             match ($key) {
+                'name' => $query->where(function ($q) use ($value) {
+                    $like = '%' . $value . '%';
+                    $q->where('first_name',  'ILIKE', $like)
+                      ->orWhere('middle_name', 'ILIKE', $like)
+                      ->orWhere('last_name',   'ILIKE', $like);
+                }),
                 'email', 'internal_id', 'phone', 'address'
                     => $query->where($key, 'ILIKE', '%' . $value . '%'),
                 default => null,
