@@ -110,4 +110,67 @@ describe('Invitations Index Livewire', function () {
             ->set('filters.inviter', 'admin')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1);
     });
+
+    it('status filter pending shows only open + active-user invitations', function () {
+        $u_pending  = User::factory()->for($this->org)->create();
+        $u_accepted = User::factory()->for($this->org)->create();
+        $u_expired  = User::factory()->for($this->org)->create();
+        $u_cancelled= User::factory()->for($this->org)->create();
+
+        Invitation::factory()->create(['user_id' => $u_pending->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+        Invitation::factory()->create(['user_id' => $u_accepted->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => now()]);
+        Invitation::factory()->create(['user_id' => $u_expired->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => null]);
+        Invitation::factory()->create(['user_id' => $u_cancelled->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+        $u_cancelled->delete();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.status', 'pending')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->user_id === $u_pending->id);
+    });
+
+    it('status filter accepted shows only accepted invitations', function () {
+        $u1 = User::factory()->for($this->org)->create();
+        $u2 = User::factory()->for($this->org)->create();
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id, 'accepted_at' => null]);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id, 'accepted_at' => now()]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.status', 'accepted')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->accepted_at !== null);
+    });
+
+    it('status filter expired shows only expired open invitations', function () {
+        $u1 = User::factory()->for($this->org)->create();
+        $u2 = User::factory()->for($this->org)->create();
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => null]);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.status', 'expired')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->user_id === $u1->id);
+    });
+
+    it('status filter cancelled shows only invitations with soft-deleted user', function () {
+        $u1 = User::factory()->for($this->org)->create();
+        $u2 = User::factory()->for($this->org)->create();
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id]);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id]);
+        $u2->delete();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.status', 'cancelled')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->user_id === $u2->id);
+    });
 });

@@ -125,9 +125,30 @@ class Index extends Component
                 'inviter' => $query->whereHas('inviter', fn ($q) => $q
                     ->where('email', 'ILIKE', '%'.$value.'%')),
 
-                default => null, // andere arms volgen in Tasks 4-5
+                'status' => $this->applyStatusFilter($query, $value),
+
+                default => null, // andere arms volgen in Task 5
             };
         }
+    }
+
+    protected function applyStatusFilter(Builder $query, string $value): void
+    {
+        match ($value) {
+            'pending' => $query->whereNull('accepted_at')
+                ->where('expires_at', '>=', now())
+                ->whereHas('user', fn ($q) => $q->whereNull('deleted_at')),
+
+            'accepted' => $query->whereNotNull('accepted_at'),
+
+            'expired' => $query->whereNull('accepted_at')
+                ->where('expires_at', '<', now())
+                ->whereHas('user', fn ($q) => $q->whereNull('deleted_at')),
+
+            'cancelled' => $query->whereHas('user', fn ($q) => $q->onlyTrashed()),
+
+            default => null,
+        };
     }
 
     protected function applySort(Builder $query): void
