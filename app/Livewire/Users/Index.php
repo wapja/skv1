@@ -29,6 +29,7 @@ class Index extends Component
     ];
 
     /** @var array<string,string> */
+    #[Session]
     public array $filters = self::DEFAULT_FILTERS;
 
     #[Session]

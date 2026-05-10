@@ -197,10 +197,10 @@ describe('Users Index Livewire', function () {
             ->assertSet('sortColumn', null);
     });
 
-    it('filters email/internal_id/phone/address case-insensitively (ILIKE contains)', function () {
-        User::factory()->for($this->org)->create(['email' => 'alice@demo1.local', 'phone' => '0612345678', 'internal_id' => 'EMP-1', 'address' => 'Damrak 1, Amsterdam']);
-        User::factory()->for($this->org)->create(['email' => 'BOB@demo1.local',   'phone' => '0699999999', 'internal_id' => 'EMP-2', 'address' => 'Coolsingel 5, Rotterdam']);
-        User::factory()->for($this->org)->create(['email' => 'carol@other.test',  'phone' => '0611111111', 'internal_id' => 'CON-9', 'address' => 'Stationsplein, Eindhoven']);
+    it('filters email case-insensitively via ILIKE contains', function () {
+        User::factory()->for($this->org)->create(['email' => 'alice@demo1.local']);
+        User::factory()->for($this->org)->create(['email' => 'BOB@demo1.local']);
+        User::factory()->for($this->org)->create(['email' => 'carol@other.test']);
         $this->actingAs($this->actor);
 
         Livewire::test(Index::class)
@@ -208,24 +208,45 @@ describe('Users Index Livewire', function () {
             ->assertSee('alice@demo1.local')
             ->assertSee('BOB@demo1.local')
             ->assertDontSee('carol@other.test');
+    });
+
+    it('filters phone via ILIKE contains', function () {
+        User::factory()->for($this->org)->create(['email' => 'alice@demo1.local', 'phone' => '0612345678']);
+        User::factory()->for($this->org)->create(['email' => 'bob@demo1.local',   'phone' => '0699999999']);
+        User::factory()->for($this->org)->create(['email' => 'carol@demo1.local', 'phone' => '0611111111']);
+        $this->actingAs($this->actor);
 
         Livewire::test(Index::class)
             ->set('filters.phone', '0699')
-            ->assertSee('BOB@demo1.local')
+            ->assertSee('bob@demo1.local')
             ->assertDontSee('alice@demo1.local')
-            ->assertDontSee('carol@other.test');
+            ->assertDontSee('carol@demo1.local');
+    });
+
+    it('filters internal_id case-insensitively via ILIKE contains', function () {
+        User::factory()->for($this->org)->create(['email' => 'alice@demo1.local', 'internal_id' => 'EMP-1']);
+        User::factory()->for($this->org)->create(['email' => 'bob@demo1.local',   'internal_id' => 'EMP-2']);
+        User::factory()->for($this->org)->create(['email' => 'carol@demo1.local', 'internal_id' => 'CON-9']);
+        $this->actingAs($this->actor);
 
         Livewire::test(Index::class)
             ->set('filters.internal_id', 'emp-')
             ->assertSee('alice@demo1.local')
-            ->assertSee('BOB@demo1.local')
-            ->assertDontSee('carol@other.test');
+            ->assertSee('bob@demo1.local')
+            ->assertDontSee('carol@demo1.local');
+    });
+
+    it('filters address case-insensitively via ILIKE contains', function () {
+        User::factory()->for($this->org)->create(['email' => 'alice@demo1.local', 'address' => 'Damrak 1, Amsterdam']);
+        User::factory()->for($this->org)->create(['email' => 'bob@demo1.local',   'address' => 'Coolsingel 5, Rotterdam']);
+        User::factory()->for($this->org)->create(['email' => 'carol@demo1.local', 'address' => 'Stationsplein, Eindhoven']);
+        $this->actingAs($this->actor);
 
         Livewire::test(Index::class)
             ->set('filters.address', 'amsterdam')
             ->assertSee('alice@demo1.local')
-            ->assertDontSee('BOB@demo1.local')
-            ->assertDontSee('carol@other.test');
+            ->assertDontSee('bob@demo1.local')
+            ->assertDontSee('carol@demo1.local');
     });
 });
 
