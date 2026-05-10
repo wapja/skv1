@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Roles\Index;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -58,7 +57,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('roles.index')
             ->assertSee('organisation_admin')
             ->assertSee('editor');
     });
@@ -69,7 +68,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('roles.index')
             ->assertDontSee('foreign-role');
     });
 
@@ -79,7 +78,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('roles.index')
             ->call('deleteRole', $id)
             ->assertHasNoErrors();
 
@@ -94,7 +93,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('roles.index')
             ->call('deleteRole', $role->id)
             ->assertHasNoErrors();
 
@@ -109,7 +108,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Index::class);
+        $component = Livewire::test('roles.index');
 
         $listed = collect($component->viewData('roles'))->firstWhere('id', $role->id);
         expect($listed->users_count)->toBe(1);
@@ -119,7 +118,7 @@ describe('Roles Index Livewire', function () {
         // The OrganisationObserver auto-created a per-org organisation_admin in beforeEach.
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Index::class);
+        $component = Livewire::test('roles.index');
         $rows = collect($component->viewData('roles'));
         $orgAdminRows = $rows->where('name', 'organisation_admin');
 
@@ -133,7 +132,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('roles.index')
             ->assertSee('organisation_admin');
     });
 
@@ -142,7 +141,7 @@ describe('Roles Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('roles.index')
             ->call('deleteRole', $template->id)
             ->assertStatus(403);
 

@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Roles\Edit;
 use App\Models\Organisation;
 use App\Models\Role;
 use App\Models\User;
@@ -65,7 +64,7 @@ it('saves a renamed role and synced permissions, then redirects to index', funct
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('name', 'redactor')
         ->set('selectedPermissions', [$newPerm->id])
         ->call('save')
@@ -82,7 +81,7 @@ it('clears all permissions when saving with an empty selection', function () {
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('selectedPermissions', [])
         ->call('save')
         ->assertRedirect(route('roles.index'));
@@ -95,7 +94,7 @@ it('rejects names that are not alpha_dash', function () {
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('name', 'has spaces')
         ->call('save')
         ->assertHasErrors(['name']);
@@ -109,7 +108,7 @@ it('rejects reserved role names', function () {
     $this->actingAs($this->actor);
 
     foreach (['super_admin', 'organisation_admin', 'member'] as $reserved) {
-        Livewire::test(Edit::class, ['role' => $role])
+        Livewire::test('roles.edit', ['role' => $role])
             ->set('name', $reserved)
             ->call('save')
             ->assertHasErrors(['name']);
@@ -125,7 +124,7 @@ it('rejects a name that clashes with a template role name', function () {
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('name', 'template_only')
         ->call('save')
         ->assertHasErrors(['name']);
@@ -139,7 +138,7 @@ it('rejects a name that already exists in the same team', function () {
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('name', 'redactor')
         ->call('save')
         ->assertHasErrors(['name']);
@@ -152,7 +151,7 @@ it('allows saving without changing the name (ignores unique on self)', function 
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('name', 'editor')
         ->call('save')
         ->assertHasNoErrors();
@@ -166,7 +165,7 @@ it('rejects a name held by a soft-deleted role in the same team (DB unique const
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Edit::class, ['role' => $role])
+    Livewire::test('roles.edit', ['role' => $role])
         ->set('name', 'tombstone')
         ->call('save')
         ->assertHasErrors(['name']);
@@ -178,7 +177,7 @@ describe('Create mode', function () {
     it('mounts in create mode without a role argument', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class)
+        Livewire::test('roles.edit')
             ->assertOk()
             ->assertSet('role', null)
             ->assertSet('name', '')
@@ -190,7 +189,7 @@ describe('Create mode', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class)
+        Livewire::test('roles.edit')
             ->set('name', 'editor')
             ->set('selectedPermissions', [$perm->id])
             ->call('save')
@@ -221,7 +220,7 @@ describe('Create mode', function () {
     it('rejects empty name on create', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class)
+        Livewire::test('roles.edit')
             ->set('name', '')
             ->call('save')
             ->assertHasErrors(['name']);
@@ -233,7 +232,7 @@ describe('Create mode', function () {
         $this->actingAs($this->actor);
 
         foreach (['super_admin', 'organisation_admin', 'member'] as $reserved) {
-            Livewire::test(Edit::class)
+            Livewire::test('roles.edit')
                 ->set('name', $reserved)
                 ->call('save')
                 ->assertHasErrors(['name']);
@@ -243,7 +242,7 @@ describe('Create mode', function () {
     it('rejects names that are not alpha_dash on create', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class)
+        Livewire::test('roles.edit')
             ->set('name', 'has spaces')
             ->call('save')
             ->assertHasErrors(['name']);
@@ -254,7 +253,7 @@ describe('Create mode', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class)
+        Livewire::test('roles.edit')
             ->set('name', 'template_only')
             ->call('save')
             ->assertHasErrors(['name']);
@@ -267,7 +266,7 @@ describe('Create mode', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class)
+        Livewire::test('roles.edit')
             ->set('name', 'redactor')
             ->call('save')
             ->assertHasErrors(['name']);

@@ -1,7 +1,5 @@
 <?php
 
-use App\Livewire\Organisations\Edit;
-use App\Livewire\Organisations\Index;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\DemoOrganisationsSeeder;
@@ -52,7 +50,7 @@ describe('Organisations Index Livewire', function () {
     it('lists all organisations for super_admin', function () {
         $this->actingAs($this->superAdmin);
 
-        Livewire::test(Index::class)
+        Livewire::test('organisations.index')
             ->assertSee('a')
             ->assertSee('b');
     });
@@ -60,7 +58,7 @@ describe('Organisations Index Livewire', function () {
     it('returns 403 for non-super-admin actors', function () {
         $this->actingAs($this->orgAdmin);
 
-        Livewire::test(Index::class)
+        Livewire::test('organisations.index')
             ->assertStatus(403);
     });
 });
@@ -69,7 +67,7 @@ describe('Organisations Edit Livewire', function () {
     it('updates an organisation for super_admin', function () {
         $this->actingAs($this->superAdmin);
 
-        Livewire::test(Edit::class, ['organisation' => $this->orgA])
+        Livewire::test('organisations.edit', ['organisation' => $this->orgA])
             ->set('name', 'Renamed A')
             ->set('slug', 'renamed-a')
             ->set('description', 'Hello')
@@ -86,7 +84,7 @@ describe('Organisations Edit Livewire', function () {
     it('rejects duplicate slugs', function () {
         $this->actingAs($this->superAdmin);
 
-        Livewire::test(Edit::class, ['organisation' => $this->orgA])
+        Livewire::test('organisations.edit', ['organisation' => $this->orgA])
             ->set('slug', 'b')
             ->call('save')
             ->assertHasErrors('slug');
@@ -95,7 +93,7 @@ describe('Organisations Edit Livewire', function () {
     it('forbids non-super-admin from editing', function () {
         $this->actingAs($this->orgAdmin);
 
-        Livewire::test(Edit::class, ['organisation' => $this->orgA])
+        Livewire::test('organisations.edit', ['organisation' => $this->orgA])
             ->assertStatus(403);
     });
 
@@ -105,7 +103,7 @@ describe('Organisations Edit Livewire', function () {
 
         $this->actingAs($this->superAdmin);
 
-        Livewire::test(Index::class)
+        Livewire::test('organisations.index')
             ->call('delete', $this->orgA->id)
             ->assertHasNoErrors();
 

@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Users\Edit as UserEdit;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -47,7 +46,7 @@ it('rejects an end_date that precedes start_date via the edit form', function ()
     ]);
 
     Livewire::actingAs($admin)
-        ->test(UserEdit::class, ['user' => $target])
+        ->test('users.edit', ['user' => $target])
         ->set('start_date', '2026-05-01')
         ->set('end_date', '2026-04-30')
         ->call('save')
@@ -64,7 +63,7 @@ it('persists the new optional fields when set, and stores empty strings as null'
     ]);
 
     Livewire::actingAs($admin)
-        ->test(UserEdit::class, ['user' => $target])
+        ->test('users.edit', ['user' => $target])
         ->set('internal_id', 'EMP-001')
         ->set('phone', '+31 6 12345678')
         ->set('address', 'Hoofdstraat 1, Amsterdam')
@@ -91,7 +90,7 @@ it('coerces empty strings on optional fields back to null when cleared via the f
     ]);
 
     Livewire::actingAs($admin)
-        ->test(UserEdit::class, ['user' => $target])
+        ->test('users.edit', ['user' => $target])
         ->set('middle_name', '')
         ->set('internal_id', '')
         ->set('phone', '')

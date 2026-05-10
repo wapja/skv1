@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Activity\Index;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -33,13 +32,13 @@ it('forbids users without activity.view permission', function () {
     $regular = User::factory()->for($this->orgA)->create();
     $this->actingAs($regular);
 
-    Livewire::test(Index::class)->assertStatus(403);
+    Livewire::test('activity.index')->assertStatus(403);
 });
 
 it('shows activities for the current organisation only (org_admin)', function () {
     $this->actingAs($this->actor);
 
-    Livewire::test(Index::class)
+    Livewire::test('activity.index')
         ->assertSee('admin@a.local')
         ->assertDontSee('admin@b.local');
 });
@@ -48,7 +47,7 @@ it('shows all activities for super_admin', function () {
     $super = User::factory()->superAdmin()->create(['organisation_id' => null]);
     $this->actingAs($super);
 
-    Livewire::test(Index::class)
+    Livewire::test('activity.index')
         ->assertSee('admin@a.local')
         ->assertSee('admin@b.local');
 });
@@ -56,7 +55,7 @@ it('shows all activities for super_admin', function () {
 it('filters by log_name', function () {
     $this->actingAs($this->actor);
 
-    Livewire::test(Index::class)
+    Livewire::test('activity.index')
         ->set('logFilter', 'users')
         ->assertSee('updated')
         ->assertDontSee('sent');
@@ -68,7 +67,7 @@ it('filters by causer (actor)', function () {
 
     $this->actingAs($this->actor);
 
-    $component = Livewire::test(Index::class)
+    $component = Livewire::test('activity.index')
         ->set('actorFilter', $secondActor->id);
 
     $rows = $component->viewData('activities');
@@ -83,6 +82,6 @@ it('paginates results at 20 per page', function () {
 
     $this->actingAs($this->actor);
 
-    $component = Livewire::test(Index::class);
+    $component = Livewire::test('activity.index');
     expect($component->viewData('activities')->count())->toBeLessThanOrEqual(20);
 });

@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Auth\Login;
 use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -21,13 +20,13 @@ beforeEach(function () {
 it('renders the login page on a tenant subdomain', function () {
     $this->get('https://demo1.skv1.test/login')
         ->assertOk()
-        ->assertSeeLivewire(Login::class);
+        ->assertSeeLivewire('auth.login');
 });
 
 it('signs the user in with valid credentials and redirects to dashboard', function () {
     app()->instance('currentOrganisation', $this->org);
 
-    Livewire::test(Login::class)
+    Livewire::test('auth.login')
         ->set('email', 'admin@demo1.local')
         ->set('password', 'Password123!')
         ->call('submit')
@@ -40,7 +39,7 @@ it('signs the user in with valid credentials and redirects to dashboard', functi
 it('rejects invalid credentials with an error', function () {
     app()->instance('currentOrganisation', $this->org);
 
-    Livewire::test(Login::class)
+    Livewire::test('auth.login')
         ->set('email', 'admin@demo1.local')
         ->set('password', 'WrongPassword')
         ->call('submit')
@@ -59,7 +58,7 @@ it('rejects users from a different tenant', function () {
 
     app()->instance('currentOrganisation', $this->org);
 
-    Livewire::test(Login::class)
+    Livewire::test('auth.login')
         ->set('email', 'admin@demo2.local')
         ->set('password', 'Password123!')
         ->call('submit')
@@ -72,7 +71,7 @@ it('rejects disabled users even with correct credentials', function () {
     $this->user->update(['status' => 'disabled']);
     app()->instance('currentOrganisation', $this->org);
 
-    Livewire::test(Login::class)
+    Livewire::test('auth.login')
         ->set('email', 'admin@demo1.local')
         ->set('password', 'Password123!')
         ->call('submit')

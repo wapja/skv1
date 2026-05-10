@@ -1,7 +1,5 @@
 <?php
 
-use App\Livewire\Users\Edit;
-use App\Livewire\Users\Index;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -30,7 +28,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->assertSee('Bob')
             ->assertSee('admin@demo1.local');
     });
@@ -41,7 +39,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->assertDontSee('Outsider');
     });
 
@@ -52,7 +50,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.status', 'pending_activation')
             ->assertSee('Pending Pete')
             ->assertDontSee('Active Alice')
@@ -70,7 +68,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('selectedColumns', ['name', 'phone'])
             ->assertSee('0612345678')
             ->assertDontSee('bob@demo1.local')
@@ -80,7 +78,7 @@ describe('Users Index Livewire', function () {
     it('sanitises unknown column keys from session state', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('selectedColumns', ['name', 'bogus_key', 'email'])
             ->assertSet('selectedColumns', ['name', 'email']);
     });
@@ -90,7 +88,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->call('delete', $target->id)
             ->assertHasNoErrors();
 
@@ -101,7 +99,7 @@ describe('Users Index Livewire', function () {
     it('forbids deleting yourself', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->call('delete', $this->actor->id)
             ->assertStatus(403);
 
@@ -113,7 +111,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->assertSet('perPage', 10)
             ->assertViewHas('users', fn ($users) => $users->count() === 10 && $users->total() >= 16);
     });
@@ -123,7 +121,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('perPage', 5)
             ->assertViewHas('users', fn ($users) => $users->count() === 5);
     });
@@ -131,7 +129,7 @@ describe('Users Index Livewire', function () {
     it('clamps an invalid perPage value back to 10', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('perPage', 7)
             ->assertSet('perPage', 10);
     });
@@ -141,7 +139,7 @@ describe('Users Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->call('gotoPage', 2)
             ->assertSet('paginators.page', 2)
             ->set('perPage', 25)
@@ -153,7 +151,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['first_name' => 'Bart',  'last_name' => 'Aap']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->assertSet('sortColumn', null)
             ->assertViewHas('users', function ($users) {
                 $rows = $users->getCollection()->pluck('last_name')->all();
@@ -167,7 +165,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['first_name' => 'Z', 'last_name' => 'Z']);
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Index::class)
+        $component = Livewire::test('users.index')
             ->call('sort', 'name')
             ->assertSet('sortColumn', 'name')
             ->assertSet('sortDirection', 'asc')
@@ -183,7 +181,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'zzz@demo1.local']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->call('sort', 'email')
             ->assertViewHas('users', fn ($users) => $users->getCollection()->first()->email === 'aaa@demo1.local')
             ->call('sort', 'email')
@@ -193,7 +191,7 @@ describe('Users Index Livewire', function () {
     it('clamps an unknown sortColumn back to null', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('sortColumn', 'bogus_field')
             ->assertSet('sortColumn', null);
     });
@@ -204,7 +202,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'carol@other.test']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.email', 'ALICE')
             ->assertSee('Alice@demo1.local')
             ->assertDontSee('BOB@demo1.local')
@@ -218,7 +216,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'carol@demo1.local', 'phone' => '0611111111']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.phone', '0699')
             ->assertSee('bob@demo1.local')
             ->assertDontSee('alice@demo1.local')
@@ -231,7 +229,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'carol@demo1.local', 'internal_id' => 'CON-9']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.internal_id', 'emp-')
             ->assertSee('alice@demo1.local')
             ->assertSee('bob@demo1.local')
@@ -244,7 +242,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'carol@demo1.local', 'address' => 'Stationsplein, Eindhoven']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.address', 'amsterdam')
             ->assertSee('alice@demo1.local')
             ->assertDontSee('bob@demo1.local')
@@ -258,7 +256,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['first_name' => 'Carl',  'middle_name' => null,   'last_name' => 'Yssel']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.name', 'Anna')
             ->assertSee('Zijlstra')
             ->assertSee('Pieters')
@@ -272,7 +270,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'en1@demo1.local', 'locale' => 'en']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.locale', 'en')
             ->assertSee('en1@demo1.local')
             ->assertDontSee('nl1@demo1.local')
@@ -286,7 +284,7 @@ describe('Users Index Livewire', function () {
         User::factory()->for($this->org)->create(['email' => 'future@demo1.local',  'start_date' => '2026-06-01']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.start_date', '2026-01-01')
             ->assertSee('cutoff@demo1.local')
             ->assertSee('future@demo1.local')
@@ -296,7 +294,7 @@ describe('Users Index Livewire', function () {
     it('sanitises unknown filter keys from session state', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters', ['name' => 'Bob', 'bogus_key' => 'x', 'email' => 'demo'])
             ->assertSet('filters.name', 'Bob')
             ->assertSet('filters.email', 'demo')
@@ -308,7 +306,7 @@ describe('Users Index Livewire', function () {
     it('clamps invalid status filter values back to empty string', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.status', 'banana')
             ->assertSet('filters.status', '');
     });
@@ -317,7 +315,7 @@ describe('Users Index Livewire', function () {
         User::factory()->count(30)->for($this->org)->create();
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->call('gotoPage', 2)
             ->assertSet('paginators.page', 2)
             ->set('filters.name', 'x')
@@ -327,7 +325,7 @@ describe('Users Index Livewire', function () {
     it('unselecting a column clears its active filter', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->set('filters.email', 'demo1')
             ->assertSet('filters.email', 'demo1')
             ->set('selectedColumns', ['name', 'status'])
@@ -338,7 +336,7 @@ describe('Users Index Livewire', function () {
         User::factory()->count(30)->for($this->org)->create();
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->call('gotoPage', 2)
             ->assertSet('paginators.page', 2)
             ->call('sort', 'email')
@@ -347,14 +345,14 @@ describe('Users Index Livewire', function () {
 
     it('shows "Uitgenodigde gebruikers"-knop voor gebruikers met invitations.send permissie', function () {
         $this->actingAs($this->actor);
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->assertSee('Uitgenodigde gebruikers');
     });
 
     it('verbergt "Uitgenodigde gebruikers"-knop voor gebruikers zonder invitations.send', function () {
         $regular = User::factory()->for($this->org)->create();
         $this->actingAs($regular);
-        Livewire::test(Index::class)
+        Livewire::test('users.index')
             ->assertDontSee('Uitgenodigde gebruikers');
     });
 });
@@ -371,7 +369,7 @@ describe('Users Edit Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $target])
+        Livewire::test('users.edit', ['user' => $target])
             ->set('first_name', 'New')
             ->set('last_name', 'Name')
             ->set('email', 'new@demo1.local')
@@ -393,7 +391,7 @@ describe('Users Edit Livewire', function () {
         $target = User::factory()->for($this->org)->create();
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $target])
+        Livewire::test('users.edit', ['user' => $target])
             ->set('email', 'not-an-email')
             ->call('save')
             ->assertHasErrors('email');
@@ -403,7 +401,7 @@ describe('Users Edit Livewire', function () {
         $target = User::factory()->for($this->org)->create();
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $target])
+        Livewire::test('users.edit', ['user' => $target])
             ->set('status', 'banana')
             ->call('save')
             ->assertHasErrors('status');
@@ -413,7 +411,7 @@ describe('Users Edit Livewire', function () {
         $superTarget = User::factory()->for($this->org)->superAdmin()->create();
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $superTarget])
+        Livewire::test('users.edit', ['user' => $superTarget])
             ->assertStatus(403);
     });
 
@@ -422,7 +420,7 @@ describe('Users Edit Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Edit::class, ['user' => $target]);
+        $component = Livewire::test('users.edit', ['user' => $target]);
 
         expect($component->instance()->availableRoles())
             ->toBe([
@@ -442,7 +440,7 @@ describe('Users Edit Livewire', function () {
 
         $this->actingAs($editor);
 
-        $component = Livewire::test(Edit::class, ['user' => $target]);
+        $component = Livewire::test('users.edit', ['user' => $target]);
 
         expect(array_keys($component->instance()->availableRoles()))
             ->toBe(['super_admin', 'organisation_admin', 'test1', 'test2']);
@@ -453,7 +451,7 @@ describe('Users Edit Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $target])
+        Livewire::test('users.edit', ['user' => $target])
             ->set('first_name', $target->first_name)
             ->set('last_name', $target->last_name)
             ->set('email', $target->email)
@@ -478,7 +476,7 @@ describe('Users Edit Livewire', function () {
 
         $this->actingAs($editor);
 
-        Livewire::test(Edit::class, ['user' => $target])
+        Livewire::test('users.edit', ['user' => $target])
             ->set('first_name', $target->first_name)
             ->set('last_name', $target->last_name)
             ->set('email', $target->email)
@@ -499,7 +497,7 @@ describe('Users Edit Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $target])
+        Livewire::test('users.edit', ['user' => $target])
             ->set('first_name', $target->first_name)
             ->set('last_name', $target->last_name)
             ->set('email', $target->email)
@@ -512,7 +510,7 @@ describe('Users Edit Livewire', function () {
     it('allows an org-admin to demote themselves via self-edit', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Edit::class, ['user' => $this->actor])
+        Livewire::test('users.edit', ['user' => $this->actor])
             ->set('first_name', $this->actor->first_name)
             ->set('last_name', $this->actor->last_name)
             ->set('email', $this->actor->email)

@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Invitations\Index;
 use App\Models\Invitation;
 use App\Models\Organisation;
 use App\Models\User;
@@ -33,7 +32,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->assertSet('sortColumn', null)
             ->assertViewHas('invitations', fn ($invs) => $invs->getCollection()->first()->user_id === $invited2->id);
     });
@@ -44,7 +43,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->call('sort', 'sent_at')
             ->assertSet('sortColumn', 'sent_at')->assertSet('sortDirection', 'asc')
             ->call('sort', 'sent_at')
@@ -55,7 +54,7 @@ describe('Invitations Index Livewire', function () {
 
     it('clamps an unknown sortColumn back to null', function () {
         $this->actingAs($this->actor);
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('sortColumn', 'bogus_field')
             ->assertSet('sortColumn', null);
     });
@@ -63,7 +62,7 @@ describe('Invitations Index Livewire', function () {
     it('forbids users without invitations.send permission', function () {
         $regular = User::factory()->for($this->org)->create();
         $this->actingAs($regular);
-        Livewire::test(Index::class)->assertStatus(403);
+        Livewire::test('invitations.index')->assertStatus(403);
     });
 
     it('filters email case-insensitively via ILIKE contains', function () {
@@ -76,7 +75,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.email', 'ALICE')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user->email === 'Alice@demo1.local');
@@ -93,7 +92,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.name', 'Anna')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 3);
     });
@@ -106,7 +105,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.inviter', 'admin')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1);
     });
@@ -125,7 +124,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.status', 'pending')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u_pending->id);
@@ -139,7 +138,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.status', 'accepted')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->accepted_at !== null);
@@ -153,7 +152,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.status', 'expired')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u1->id);
@@ -168,7 +167,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.status', 'cancelled')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u2->id);
@@ -182,7 +181,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.expires_at', '2026-03-01')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u2->id);
@@ -196,7 +195,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.sent_at', '2026-01-01')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u2->id);
@@ -216,7 +215,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Index::class);
+        $component = Livewire::test('invitations.index');
 
         $i_p->load(['user' => fn ($q) => $q->withTrashed()]);
         $i_a->load(['user' => fn ($q) => $q->withTrashed()]);
@@ -243,7 +242,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->call('sort', 'status')
             ->assertViewHas('invitations', function ($invs) use ($u_accepted, $u_pending, $u_expired, $u_cancelled) {
                 $userIds = $invs->getCollection()->pluck('user_id')->all();
@@ -260,7 +259,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->call('sort', 'email')
             ->assertViewHas('invitations', fn ($i) => $i->getCollection()->first()->user_id === $u1->id)
             ->call('sort', 'email')
@@ -272,7 +271,7 @@ describe('Invitations Index Livewire', function () {
     it('sanitises unknown filter keys from session state', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters', ['email' => 'demo', 'bogus_key' => 'x', 'name' => 'Bob'])
             ->assertSet('filters.email', 'demo')
             ->assertSet('filters.name', 'Bob')
@@ -281,7 +280,7 @@ describe('Invitations Index Livewire', function () {
 
     it('clamps invalid status filter values back to empty string', function () {
         $this->actingAs($this->actor);
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.status', 'banana')
             ->assertSet('filters.status', '');
     });
@@ -293,7 +292,7 @@ describe('Invitations Index Livewire', function () {
         }
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('perPage', 5)
             ->call('gotoPage', 2)
             ->assertSet('paginators.page', 2)
@@ -303,7 +302,7 @@ describe('Invitations Index Livewire', function () {
 
     it('unselecting a column clears its active filter', function () {
         $this->actingAs($this->actor);
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('filters.email', 'demo1')
             ->assertSet('filters.email', 'demo1')
             ->set('selectedColumns', ['name', 'status'])
@@ -316,7 +315,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->call('cancel', $inv->id)
             ->assertHasNoErrors();
 
@@ -329,7 +328,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->call('resend', $inv->id)
             ->assertHasNoErrors();
 
@@ -345,7 +344,7 @@ describe('Invitations Index Livewire', function () {
         }
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->set('perPage', 5)
             ->call('gotoPage', 2)
             ->assertSet('paginators.page', 2)
@@ -372,7 +371,7 @@ describe('Invitations Index Livewire', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Index::class)
+        Livewire::test('invitations.index')
             ->assertSee('local@demo1.local')
             ->assertDontSee('other@demo2.local');
     });

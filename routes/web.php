@@ -2,18 +2,6 @@
 
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Middleware\HealthCheckAuth;
-use App\Livewire\Activity\Index as ActivityIndex;
-use App\Livewire\Auth\Activate;
-use App\Livewire\Auth\ForgotPassword;
-use App\Livewire\Auth\Login;
-use App\Livewire\Auth\ResetPassword;
-use App\Livewire\Invitations\Index as InvitationIndex;
-use App\Livewire\Organisations\Edit as OrganisationEdit;
-use App\Livewire\Organisations\Index as OrganisationIndex;
-use App\Livewire\Roles\Edit as RoleEdit;
-use App\Livewire\Roles\Index as RoleIndex;
-use App\Livewire\Users\Edit as UserEdit;
-use App\Livewire\Users\Index as UserIndex;
 use App\Services\ImpersonationGuard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -25,12 +13,12 @@ Route::get('/', function () {
 })->name('welcome');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', Login::class)->name('login');
-    Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
-    Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
+    Route::livewire('/login', 'auth.login')->name('login');
+    Route::livewire('/forgot-password', 'auth.forgot-password')->name('password.request');
+    Route::livewire('/reset-password/{token}', 'auth.reset-password')->name('password.reset');
 });
 
-Route::get('/invitations/{token}/accept', Activate::class)
+Route::livewire('/invitations/{token}/accept', 'auth.activate')
     ->middleware(['signed', 'guest'])
     ->name('invitation.accept');
 
@@ -41,18 +29,18 @@ Route::get('/health-check', HealthCheckController::class)
 Route::middleware('auth')->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
 
-    Route::get('/admin/users', UserIndex::class)->name('users.index');
-    Route::get('/admin/users/{user}/edit', UserEdit::class)->name('users.edit');
-    Route::get('/admin/invitations', InvitationIndex::class)->name('invitations.index');
-    Route::get('/admin/roles', RoleIndex::class)->name('roles.index');
-    Route::get('/admin/roles/create', RoleEdit::class)->name('roles.create');
-    Route::get('/admin/roles/{role}/edit', RoleEdit::class)->name('roles.edit');
+    Route::livewire('/admin/users', 'users.index')->name('users.index');
+    Route::livewire('/admin/users/{user}/edit', 'users.edit')->name('users.edit');
+    Route::livewire('/admin/invitations', 'invitations.index')->name('invitations.index');
+    Route::livewire('/admin/roles', 'roles.index')->name('roles.index');
+    Route::livewire('/admin/roles/create', 'roles.edit')->name('roles.create');
+    Route::livewire('/admin/roles/{role}/edit', 'roles.edit')->name('roles.edit');
 
-    Route::get('/admin/organisations', OrganisationIndex::class)->name('organisations.index');
-    Route::get('/admin/organisations/create', OrganisationEdit::class)->name('organisations.create');
-    Route::get('/admin/organisations/{organisation}/edit', OrganisationEdit::class)->name('organisations.edit');
+    Route::livewire('/admin/organisations', 'organisations.index')->name('organisations.index');
+    Route::livewire('/admin/organisations/create', 'organisations.edit')->name('organisations.create');
+    Route::livewire('/admin/organisations/{organisation}/edit', 'organisations.edit')->name('organisations.edit');
 
-    Route::get('/admin/activity', ActivityIndex::class)->name('activity.index');
+    Route::livewire('/admin/activity', 'activity.index')->name('activity.index');
 
     Route::post('/impersonate/stop', function (ImpersonationGuard $guard) {
         $guard->stop();

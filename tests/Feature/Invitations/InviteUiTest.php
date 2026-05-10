@@ -1,7 +1,5 @@
 <?php
 
-use App\Livewire\Auth\Activate;
-use App\Livewire\Invitations\Send;
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
 use App\Models\Organisation;
@@ -38,7 +36,7 @@ describe('Send invitation Livewire component', function () {
         Mail::fake();
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'New')
             ->set('lastName', 'Hire')
             ->set('email', 'newhire@demo1.local')
@@ -54,7 +52,7 @@ describe('Send invitation Livewire component', function () {
     it('rejects invalid emails', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'A')
             ->set('lastName', 'B')
             ->set('email', 'not-an-email')
@@ -66,7 +64,7 @@ describe('Send invitation Livewire component', function () {
         $this->actor->removeRole('organisation_admin');
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'X')
             ->set('lastName', 'Y')
             ->set('email', 'x@demo1.local')
@@ -77,7 +75,7 @@ describe('Send invitation Livewire component', function () {
     it('requires first_name and last_name', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', '')
             ->set('lastName', '')
             ->set('email', 'someone@demo1.local')
@@ -89,7 +87,7 @@ describe('Send invitation Livewire component', function () {
         Mail::fake();
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Solo')
             ->set('middleName', '')
             ->set('lastName', 'Name')
@@ -106,7 +104,7 @@ describe('Send invitation Livewire component', function () {
         Mail::fake();
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Auto')
             ->set('lastName', 'Tenant')
             ->set('email', 'auto@demo1.local')
@@ -122,7 +120,7 @@ describe('Send invitation Livewire component', function () {
         $other = Organisation::factory()->create(['slug' => 'demo-spoof']);
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Spoof')
             ->set('lastName', 'Attempt')
             ->set('email', 'spoof@demo1.local')
@@ -152,7 +150,7 @@ describe('Send invitation Livewire component', function () {
 
         $this->actingAs($superAdmin);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Apex')
             ->set('lastName', 'Invite')
             ->set('email', 'apex@apex-target.local')
@@ -177,7 +175,7 @@ describe('Send invitation Livewire component', function () {
 
         $this->actingAs($superAdmin);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Missing')
             ->set('lastName', 'Org')
             ->set('email', 'missing@apex.local')
@@ -198,7 +196,7 @@ describe('Send invitation Livewire component', function () {
 
         $this->actingAs($superAdmin);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Bogus')
             ->set('lastName', 'Org')
             ->set('email', 'bogus@apex.local')
@@ -213,7 +211,7 @@ describe('Send invitation Livewire component', function () {
 
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Sneaky')
             ->set('lastName', 'Admin')
             ->set('email', 'sneaky@apex.local')
@@ -226,7 +224,7 @@ describe('Send invitation Livewire component', function () {
         app()->forgetInstance('currentOrganisation');
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Send::class);
+        $component = Livewire::test('invitations.send');
 
         expect($component->instance()->availableOrganisations())->toBe([]);
     });
@@ -234,7 +232,7 @@ describe('Send invitation Livewire component', function () {
     it('shows organisation_admin / test1 / test2 to org-admin inviters', function () {
         $this->actingAs($this->actor);
 
-        $component = Livewire::test(Send::class);
+        $component = Livewire::test('invitations.send');
 
         expect($component->instance()->availableRoles())
             ->toBe([
@@ -254,7 +252,7 @@ describe('Send invitation Livewire component', function () {
 
         $this->actingAs($superAdmin);
 
-        $component = Livewire::test(Send::class);
+        $component = Livewire::test('invitations.send');
 
         expect(array_keys($component->instance()->availableRoles()))
             ->toBe(['super_admin', 'organisation_admin', 'test1', 'test2']);
@@ -263,7 +261,7 @@ describe('Send invitation Livewire component', function () {
     it('rejects a spoofed super_admin role from a non-super-admin inviter', function () {
         $this->actingAs($this->actor);
 
-        Livewire::test(Send::class)
+        Livewire::test('invitations.send')
             ->set('firstName', 'Spoof')
             ->set('lastName', 'Role')
             ->set('email', 'spoof-role@demo1.local')
@@ -291,7 +289,7 @@ describe('Activate Livewire component (signed activation)', function () {
 
         $this->get($url)
             ->assertOk()
-            ->assertSeeLivewire(Activate::class)
+            ->assertSeeLivewire('auth.activate')
             ->assertSee('activate@demo1.local');
     });
 
@@ -308,7 +306,7 @@ describe('Activate Livewire component (signed activation)', function () {
             organisationId: $this->org->id,
         );
 
-        Livewire::test(Activate::class, ['token' => $invitation->token])
+        Livewire::test('auth.activate', ['token' => $invitation->token])
             ->set('password', 'BrandNew!Pwd2026')
             ->set('password_confirmation', 'BrandNew!Pwd2026')
             ->call('submit')
@@ -333,7 +331,7 @@ describe('Activate Livewire component (signed activation)', function () {
         );
         app(InvitationService::class)->accept($invitation->token, 'First!Pwd2026');
 
-        Livewire::test(Activate::class, ['token' => $invitation->token])
+        Livewire::test('auth.activate', ['token' => $invitation->token])
             ->set('password', 'Second!Pwd2026')
             ->set('password_confirmation', 'Second!Pwd2026')
             ->call('submit')
@@ -353,7 +351,7 @@ describe('Activate Livewire component (signed activation)', function () {
             organisationId: $this->org->id,
         );
 
-        Livewire::test(Activate::class, ['token' => $invitation->token])
+        Livewire::test('auth.activate', ['token' => $invitation->token])
             ->set('password', 'Aaa!Pwd2026')
             ->set('password_confirmation', 'Bbb!Pwd2026')
             ->call('submit')

@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\Users\Impersonate;
 use App\Models\Organisation;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -23,7 +22,7 @@ beforeEach(function () {
 it('opens the modal when the open-impersonate event is received', function () {
     $this->actingAs($this->actor);
 
-    Livewire::test(Impersonate::class)
+    Livewire::test('users.impersonate')
         ->assertSet('open', false)
         ->dispatch('open-impersonate', userId: $this->target->id)
         ->assertSet('open', true)
@@ -33,7 +32,7 @@ it('opens the modal when the open-impersonate event is received', function () {
 it('starts impersonation and redirects to dashboard on success', function () {
     $this->actingAs($this->actor);
 
-    Livewire::test(Impersonate::class)
+    Livewire::test('users.impersonate')
         ->call('openFor', $this->target->id)
         ->set('reason', 'Investigating bug report')
         ->call('start')
@@ -46,7 +45,7 @@ it('starts impersonation and redirects to dashboard on success', function () {
 it('shows an error when the reason is empty', function () {
     $this->actingAs($this->actor);
 
-    Livewire::test(Impersonate::class)
+    Livewire::test('users.impersonate')
         ->call('openFor', $this->target->id)
         ->set('reason', '')
         ->call('start')
@@ -59,7 +58,7 @@ it('surfaces a permission error when target is in another org', function () {
 
     $this->actingAs($this->actor);
 
-    Livewire::test(Impersonate::class)
+    Livewire::test('users.impersonate')
         ->call('openFor', $foreignTarget->id)
         ->set('reason', 'Trying to cross orgs')
         ->call('start')
