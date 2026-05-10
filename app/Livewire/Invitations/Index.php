@@ -260,6 +260,22 @@ class Index extends Component
         };
     }
 
+    public function clearFilters(): void
+    {
+        $this->filters = self::DEFAULT_FILTERS;
+        $this->resetPage();
+    }
+
+    public function hasNoFilters(): bool
+    {
+        foreach ($this->filters as $value) {
+            if ($value !== '' && $value !== null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     #[Layout('components.layouts.app')]
     #[Title('Uitgenodigde gebruikers')]
     public function render()
