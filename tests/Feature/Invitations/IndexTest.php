@@ -267,4 +267,45 @@ describe('Invitations Index Livewire', function () {
             ->call('sort', 'name')
             ->assertViewHas('invitations', fn ($i) => $i->getCollection()->first()->user_id === $u1->id);
     });
+
+    it('sanitises unknown filter keys from session state', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters', ['email' => 'demo', 'bogus_key' => 'x', 'name' => 'Bob'])
+            ->assertSet('filters.email', 'demo')
+            ->assertSet('filters.name', 'Bob')
+            ->tap(fn ($c) => expect(array_key_exists('bogus_key', $c->get('filters')))->toBeFalse());
+    });
+
+    it('clamps invalid status filter values back to empty string', function () {
+        $this->actingAs($this->actor);
+        Livewire::test(Index::class)
+            ->set('filters.status', 'banana')
+            ->assertSet('filters.status', '');
+    });
+
+    it('resets to page 1 when any filter changes', function () {
+        $invited = User::factory()->count(15)->for($this->org)->create();
+        foreach ($invited as $u) {
+            Invitation::factory()->create(['user_id' => $u->id, 'invited_by' => $this->actor->id]);
+        }
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('perPage', 5)
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->set('filters.email', 'x')
+            ->assertSet('paginators.page', 1);
+    });
+
+    it('unselecting a column clears its active filter', function () {
+        $this->actingAs($this->actor);
+        Livewire::test(Index::class)
+            ->set('filters.email', 'demo1')
+            ->assertSet('filters.email', 'demo1')
+            ->set('selectedColumns', ['name', 'status'])
+            ->assertSet('filters.email', '');
+    });
 });

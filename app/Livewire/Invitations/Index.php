@@ -91,6 +91,33 @@ class Index extends Component
         }
     }
 
+    public function updatedFilters(): void
+    {
+        $valid = array_keys(self::DEFAULT_FILTERS);
+        $this->filters = array_intersect_key(
+            array_merge(self::DEFAULT_FILTERS, $this->filters),
+            array_flip($valid),
+        );
+
+        if (! in_array($this->filters['status'], array_merge([''], self::STATUSES), true)) {
+            $this->filters['status'] = '';
+        }
+
+        $this->resetPage();
+    }
+
+    public function updatedSelectedColumns(): void
+    {
+        $valid = array_keys($this->availableColumns());
+        $this->selectedColumns = array_values(array_intersect($valid, $this->selectedColumns));
+
+        foreach (array_keys($this->filters) as $key) {
+            if (! in_array($key, $this->selectedColumns, true)) {
+                $this->filters[$key] = '';
+            }
+        }
+    }
+
     public function updatedPerPage(): void
     {
         if (! in_array($this->perPage, self::PER_PAGE_OPTIONS, true)) {
