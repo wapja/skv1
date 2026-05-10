@@ -157,6 +157,7 @@ describe('Users Index Livewire', function () {
             ->assertSet('sortColumn', null)
             ->assertViewHas('users', function ($users) {
                 $rows = $users->getCollection()->pluck('last_name')->all();
+
                 return $rows[0] === 'Aap' && in_array('Zilver', $rows, true);
             });
     });

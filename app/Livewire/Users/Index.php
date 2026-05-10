@@ -153,17 +153,14 @@ class Index extends Component
             }
             match ($key) {
                 'name' => $query->where(function ($q) use ($value) {
-                    $like = '%' . $value . '%';
-                    $q->where('first_name',  'ILIKE', $like)
-                      ->orWhere('middle_name', 'ILIKE', $like)
-                      ->orWhere('last_name',   'ILIKE', $like);
+                    $like = '%'.$value.'%';
+                    $q->where('first_name', 'ILIKE', $like)
+                        ->orWhere('middle_name', 'ILIKE', $like)
+                        ->orWhere('last_name', 'ILIKE', $like);
                 }),
-                'email', 'internal_id', 'phone', 'address'
-                    => $query->where($key, 'ILIKE', '%' . $value . '%'),
-                'status', 'locale'
-                    => $query->where($key, $value),
-                'start_date', 'end_date'
-                    => $query->whereDate($key, '>=', $value),
+                'email', 'internal_id', 'phone', 'address' => $query->where($key, 'ILIKE', '%'.$value.'%'),
+                'status', 'locale' => $query->where($key, $value),
+                'start_date', 'end_date' => $query->whereDate($key, '>=', $value),
                 default => null,
             };
         }
@@ -173,12 +170,13 @@ class Index extends Component
     {
         if ($this->sortColumn === null) {
             $query->orderBy('last_name')->orderBy('first_name');
+
             return;
         }
         $direction = $this->sortDirection === 'desc' ? 'desc' : 'asc';
         match ($this->sortColumn) {
-            'name'  => $query->orderBy('last_name', $direction)
-                             ->orderBy('first_name', $direction),
+            'name' => $query->orderBy('last_name', $direction)
+                ->orderBy('first_name', $direction),
             default => $query->orderBy($this->sortColumn, $direction),
         };
     }
@@ -196,6 +194,7 @@ class Index extends Component
                 return false;
             }
         }
+
         return true;
     }
 
