@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>skv1 — technische beschrijving</title>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --fg: #1f2328;
+            --muted: #6e7781;
+            --border: #d0d7de;
+            --code-bg: #eef0f3;
+            --accent: #0969da;
+            --warn-bg: #fff8c5;
+            --warn-border: #d4a72c;
+            --note-bg: #ddf4ff;
+            --note-border: #54aeff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--fg);
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem 1rem 4rem;
+        }
+        article { max-width: 820px; margin: 0 auto; }
+        h1 { font-size: 1.85rem; margin: 0 0 .25rem; line-height: 1.2; }
+        h2 { font-size: 1.3rem; margin: 2.5rem 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+        h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+        p { margin: .6rem 0; }
+        ul, ol { margin: .6rem 0; padding-left: 1.5rem; }
+        li { margin: .25rem 0; }
+        .meta { color: var(--muted); font-size: .9rem; margin: 0 0 1.5rem; }
+        a { color: var(--accent); }
+        code {
+            background: var(--code-bg);
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+            font: 0.92em/1.4 "SF Mono", Menlo, Consolas, monospace;
+        }
+        pre {
+            background: var(--code-bg);
+            border-radius: 6px;
+            padding: 0.9rem 1rem;
+            overflow-x: auto;
+            font: 0.88rem/1.5 "SF Mono", Menlo, Consolas, monospace;
+            border: 1px solid var(--border);
+        }
+        pre code { background: transparent; padding: 0; font-size: 1em; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.75rem 0;
+            font-size: 0.92rem;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.65rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        th { background: var(--code-bg); font-weight: 600; }
+        .callout {
+            border: 1px solid var(--warn-border);
+            background: var(--warn-bg);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        .callout strong { color: #6f4c00; }
+        .note {
+            border: 1px solid var(--note-border);
+            background: var(--note-bg);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        .toc {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.85rem 1.25rem;
+            margin: 1.5rem 0 2rem;
+            font-size: 0.92rem;
+        }
+        .toc ol { margin: 0.25rem 0 0; columns: 2; column-gap: 1.5rem; }
+        .toc li { break-inside: avoid; }
+    </style>
+</head>
+<body>
+<article>
+
+<h1>skv1 — technische beschrijving</h1>
+<p class="meta">Versie 2026-05-10 · Doelgroep: ontwikkelaars die de codebase moeten begrijpen, uitbreiden of debuggen.</p>
+
+<div class="note">
+Dit document beschrijft <strong>hoe het systeem werkt en waar dingen staan</strong>.<br>
+Voor <em>installatie en projectsetup</em> zie <a href="handleiding.html">handleiding.html</a>.<br>
+Voor <em>gebruikersuitleg in lekentaal</em> zie <a href="../skv1_uitleg.html">skv1_uitleg.html</a>.<br>
+Voor <em>ontwerpkeuzes en de oorspronkelijke opdracht</em> zie <a href="../OUTPUT_SUMMARY.md">OUTPUT_SUMMARY.md</a>.
+</div>
+
+<div class="toc">
+<strong>Inhoud</strong>
+<ol>
+    <li><a href="#wat">Wat is skv1?</a></li>
+    <li><a href="#mappen">Mappenstructuur op hoog niveau</a></li>
+    <li><a href="#request">Request-levenscyclus</a></li>
+    <li><a href="#tenancy">Multi-tenancy</a></li>
+    <li><a href="#authz">Autorisatie</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#models">Models</a></li>
+    <li><a href="#observers">Observers</a></li>
+    <li><a href="#auth">Authenticatie</a></li>
+    <li><a href="#frontend">Frontend-architectuur</a></li>
+    <li><a href="#routes">Routes</a></li>
+    <li><a href="#db">Database</a></li>
+    <li><a href="#tests">Tests</a></li>
+    <li><a href="#config">Configuratie &amp; environment</a></li>
+    <li><a href="#scheduler">Scheduler &amp; queue</a></li>
+    <li><a href="#ci">CI</a></li>
+    <li><a href="#waar">Waar vind ik...?</a></li>
+    <li><a href="#uitbreiden">Veelvoorkomende uitbreidingen</a></li>
+    <li><a href="#conventies">Conventies &amp; afspraken</a></li>
+    <li><a href="#historiek">Versie-historiek</a></li>
+</ol>
+</div>
+
+<h2 id="wat">1. Wat is skv1?</h2>
+<p>skv1 is een opinionated Laravel-startersjabloon dat als basis dient voor alle nieuwe projecten van Frank Cornet. Per nieuw project levert het direct werkende multi-tenancy, RBAC, invitation-only authenticatie, audit-log, impersonation en backups — zodat per project geen tijd verloren gaat aan herhaaldelijk dezelfde basisinfrastructuur opzetten.</p>
+<p>Het wordt geconsumeerd via:</p>
+<pre><code>composer create-project wapja/skv1 &lt;projectnaam&gt;</code></pre>
+
+<h3>Tech stack</h3>
+<table>
+<tr><th>Laag</th><th>Keuze</th></tr>
+<tr><td>Framework</td><td>Laravel 13</td></tr>
+<tr><td>UI-componenten</td><td>Livewire 4 + Flux UI Pro</td></tr>
+<tr><td>Database</td><td>PostgreSQL 16+ (Herd Pro levert lokaal v18)</td></tr>
+<tr><td>PHP</td><td>8.3+ (Herd levert 8.4)</td></tr>
+<tr><td>Tests</td><td>Pest 4 + pest-plugin-browser</td></tr>
+<tr><td>Code style</td><td>Laravel Pint (PSR-12 variant)</td></tr>
+<tr><td>Build</td><td>Vite 8 + Tailwind v4</td></tr>
+<tr><td>Queue / cache / session</td><td><code>database</code>-driver (geen Redis, geen Horizon)</td></tr>
+<tr><td>RBAC</td><td><code>spatie/laravel-permission</code> (teams-mode)</td></tr>
+<tr><td>Audit</td><td><code>spatie/laravel-activitylog</code></td></tr>
+<tr><td>Impersonation</td><td><code>lab404/laravel-impersonate</code></td></tr>
+<tr><td>2FA (opt-in)</td><td><code>pragmarx/google2fa-laravel</code> + <code>bacon/bacon-qr-code</code></td></tr>
+<tr><td>Backups</td><td><code>spatie/laravel-backup</code></td></tr>
+<tr><td>Profiler (alleen lokaal)</td><td>Laravel Telescope + Debugbar</td></tr>
+</table>
+
+<h3>Bewust <em>niet</em> in scope</h3>
+<p>Billing, publieke marketing-frontend, REST/JSON API, Sanctum, Vue/React/Inertia, MySQL/SQLite-fallback, Horizon, SSO/social login, feature-flag systeem, custom CLI-installer, publieke registratie.</p>
+
+<h2 id="mappen">2. Mappenstructuur op hoog niveau</h2>
+<pre><code>skv1/
+├── app/
+│   ├── Contracts/             ← marker-interfaces
+│   ├── Exceptions/            ← per-feature exception classes
+│   │   ├── Impersonation/
+│   │   └── Invitation/
+│   ├── Http/
+│   │   ├── Controllers/       ← uitsluitend HealthCheck (rest is Livewire)
+│   │   ├── Middleware/        ← ResolveTenant, HealthCheckAuth
+│   │   └── Requests/          ← FormRequests
+│   ├── Livewire/              ← alle UI-componenten, gegroepeerd per feature
+│   │   ├── Activity/
+│   │   ├── Auth/
+│   │   ├── Invitations/
+│   │   ├── Organisations/
+│   │   ├── Roles/
+│   │   └── Users/
+│   ├── Mail/                  ← Mailable classes
+│   ├── Models/
+│   │   └── Concerns/          ← reusable model traits
+│   ├── Observers/             ← model lifecycle hooks
+│   ├── Policies/              ← Gate-policies
+│   ├── Providers/             ← AppServiceProvider, TelescopeServiceProvider
+│   ├── Services/              ← business logic (zie §6)
+│   └── helpers.php            ← globale tenant() helper
+├── bootstrap/                  ← Laravel 11+ bootstrap (geen Kernel.php)
+├── config/                     ← config-bestanden
+├── database/
+│   ├── factories/
+│   ├── migrations/
+│   └── seeders/
+├── docs/
+│   ├── handleiding.html       ← installatie &amp; projectsetup
+│   ├── technische-beschrijving.md/.html  ← dit document
+│   └── superpowers/           ← plans &amp; specs uit eerdere sessies
+├── lang/                       ← nl.json + vendor/
+├── public/                     ← Vite-build doelmap
+├── resources/views/            ← Blade-templates en Livewire-views
+├── routes/
+│   ├── console.php            ← scheduler-jobs
+│   └── web.php                ← alle web-routes
+├── storage/
+└── tests/
+    ├── Arch/
+    ├── Browser/
+    ├── Feature/
+    └── Unit/</code></pre>
+
+<h2 id="request">3. Request-levenscyclus</h2>
+<p>Laravel 13 gebruikt het bootstrap-pattern uit Laravel 11+. <strong>Er is geen <code>app/Http/Kernel.php</code>.</strong> De middleware-registratie en routing wordt opgegeven in <code>bootstrap/app.php</code>:</p>
+<pre><code>// bootstrap/app.php
+return Application::configure(basePath: dirname(__DIR__))
+    -&gt;withRouting(
+        web:      __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health:   '/up',
+    )
+    -&gt;withMiddleware(function (Middleware $middleware): void {
+        $middleware-&gt;web(append: [
+            ResolveTenant::class,
+        ]);
+    })
+    -&gt;withExceptions(function (Exceptions $exceptions): void {
+        //
+    })-&gt;create();</code></pre>
+
+<p>Een binnenkomende request doorloopt:</p>
+<ol>
+    <li><strong>Standaard <code>web</code>-middleware-stack</strong> (sessions, CSRF, cookies, encryption).</li>
+    <li><strong><code>ResolveTenant</code></strong> — leest het hostname, bindt zo nodig de <code>Organisation</code> aan de container en zet de Spatie team-scope. Zie §4.</li>
+    <li><strong>Route-middleware</strong> (<code>auth</code>, <code>guest</code>, <code>signed</code>, <code>HealthCheckAuth</code>).</li>
+    <li><strong>Livewire-component of view</strong> rendert het antwoord.</li>
+</ol>
+
+<div class="note"><strong>Healthcheck:</strong> <code>/up</code> is de Laravel-default healthcheck. Daarnaast bestaat een custom <code>/health-check</code> (zie <code>routes/web.php</code>) met API-key/permission gate via <code>HealthCheckAuth</code>.</div>
+
+<h2 id="tenancy">4. Multi-tenancy</h2>
+<p>skv1 is <strong>single-database multi-tenant</strong>: één gedeelde PostgreSQL-database met een <code>organisation_id</code> op elke tenant-owned tabel. Subdomeinen identificeren de tenant.</p>
+
+<h3>4.1 Tenant-resolutie via subdomein</h3>
+<pre><code>school1.skv1.test  →  Organisation::where('slug', 'school1')
+school2.skv1.test  →  Organisation::where('slug', 'school2')
+skv1.test          →  apex (geen tenant)
+admin.skv1.test    →  apex/admin (geen tenant; voor super-admins)</code></pre>
+
+<p>Logic in <code>app/Http/Middleware/ResolveTenant.php</code>:</p>
+<table>
+<tr><th>Hostname</th><th>Gedrag</th></tr>
+<tr><td><code>apex_domain</code> of <code>admin_host</code></td><td>Geen tenant binden. Voor super-admins wordt Spatie's <code>team_id</code> op de laagst-genummerde organisatie gezet, zodat role-lookups werken (zie §5.3).</td></tr>
+<tr><td><code>&lt;slug&gt;.&lt;apex&gt;</code> (bekende slug)</td><td><code>Organisation</code> wordt opgehaald, gebonden aan <code>app('currentOrganisation')</code>, en <code>PermissionRegistrar::setPermissionsTeamId($org-&gt;id)</code> aangeroepen.</td></tr>
+<tr><td>Onbekend subdomein</td><td><code>abort(404)</code>.</td></tr>
+</table>
+<p><code>apex_domain</code> en <code>admin_host</code> worden gelezen uit <code>config/app.php</code> (gevoed door <code>APP_APEX_DOMAIN</code> en <code>APP_ADMIN_HOST</code>).</p>
+
+<h3>4.2 De <code>BelongsToOrganisation</code>-trait</h3>
+<p>Locatie: <code>app/Models/Concerns/BelongsToOrganisation.php</code></p>
+<p>Modellen die per-tenant data bevatten gebruiken deze trait. Het levert drie dingen:</p>
+<ol>
+    <li><strong>Auto-vullen van <code>organisation_id</code></strong> bij het aanmaken van een nieuw record:
+<pre><code>static::creating(function ($model) {
+    if (! $model-&gt;organisation_id &amp;&amp; $tenant = static::resolveCurrentTenant()) {
+        $model-&gt;organisation_id = $tenant-&gt;id;
+    }
+});</code></pre>
+    </li>
+    <li><strong>Globale scope</strong> die queries automatisch filtert op de huidige tenant. Super-admins worden bewust overgeslagen, zodat zij cross-org kunnen werken.</li>
+    <li><strong><code>organisation()</code> BelongsTo</strong>-relatie en <strong><code>scopeWithoutTenantScope()</code></strong> voor expliciete uitstapjes.</li>
+</ol>
+
+<div class="callout"><strong>Niet-evidente valstrik:</strong> de scope gebruikt <code>auth()-&gt;hasUser()</code> (niet <code>auth()-&gt;user()</code>). De inline comment legt uit waarom: <code>auth()-&gt;user()</code> triggert SessionGuard's eigen <code>User::find($id)</code>-query, die opnieuw deze scope binnentreedt — recursie tot PHP-FPM crasht. Wijzig dit niet zonder te begrijpen waarom.</div>
+
+<h3>4.3 Het <code>TenantOwned</code>-contract</h3>
+<p>Locatie: <code>app/Contracts/TenantOwned.php</code> — volledig leeg:</p>
+<pre><code>interface TenantOwned {}</code></pre>
+<p>Het is een <strong>marker-interface</strong>: geen contract-methodes, alleen labelen. Wie hem implementeert tekent het volgende:</p>
+<ul>
+    <li>"Mijn rijen worden door <code>OrganisationObserver</code> mee soft-deleted als de organisatie zelf soft-deleted wordt."</li>
+    <li>"Ik moet expliciet door de architectuur-test (<code>tests/Arch/TenantOwnedArchTest.php</code>) gevalideerd worden."</li>
+</ul>
+<p>Huidige implementaties: <code>User</code>, <code>Role</code> (de skv1-extensie van Spatie's Role).</p>
+
+<h3>4.4 De <code>tenant()</code>-helper</h3>
+<p><code>app/helpers.php</code> definieert globaal:</p>
+<pre><code>function tenant(): ?Organisation
+{
+    return app()-&gt;bound('currentOrganisation') ? app('currentOrganisation') : null;
+}</code></pre>
+<p>Bruikbaar in views en services om de huidige organisatie op te halen zonder dependency injection.</p>
+
+<h2 id="authz">5. Autorisatie</h2>
+
+<h3>5.1 Permissions</h3>
+<p>Permissions zijn <strong>globaal</strong>, niet per-tenant. Gedefinieerd in <code>database/seeders/RolesAndPermissionsSeeder.php</code>. Ze volgen het patroon <code>&lt;resource&gt;.&lt;actie&gt;</code>, bijvoorbeeld:</p>
+<pre><code>users.view, users.create, users.update, users.delete, users.impersonate
+roles.view, roles.manage
+organisations.view, organisations.manage
+invitations.send, invitations.cancel
+activity.view
+backup.manage
+system.health</code></pre>
+
+<h3>5.2 Roles</h3>
+<p>Spatie draait in <strong>teams-mode</strong>: het <code>team_id</code>-kolom is gelijk aan <code>organisation_id</code>.</p>
+<p>Er bestaan twee niveaus van rollen:</p>
+<table>
+<tr><th>Niveau</th><th><code>team_id</code></th><th>Doel</th></tr>
+<tr><td><strong>Template</strong></td><td><code>NULL</code></td><td>Apex-definitie. Wordt nooit direct toegekend aan gebruikers.</td></tr>
+<tr><td><strong>Per-tenant kopie</strong></td><td><code>&lt;organisation_id&gt;</code></td><td>Echte rol die toegekend wordt aan users binnen die organisatie.</td></tr>
+</table>
+<p>Wanneer een nieuwe <code>Organisation</code> wordt aangemaakt, materialiseert <code>OrganisationObserver::created()</code> een per-tenant kopie van elke template-rol (inclusief permissions). Code in <code>app/Observers/OrganisationObserver.php</code> en hulpklasse <code>app/Services/RoleBackfiller.php</code> voor bestaande organisaties (gebruikt door migratie <code>2026_05_09_184629</code>).</p>
+<p>Standaard template-rollen:</p>
+<ul>
+    <li><code>super_admin</code> — krijgt <strong>alle</strong> permissions</li>
+    <li><code>organisation_admin</code> — krijgt org-niveau admin permissions</li>
+    <li><code>test1</code>, <code>test2</code> — leeg, voor testdoeleinden</li>
+</ul>
+<p><code>App\Models\Role</code> extendt <code>Spatie\Permission\Models\Role</code>, voegt <code>SoftDeletes</code> toe en implementeert <code>TenantOwned</code>.</p>
+
+<h3>5.3 Super-admin pattern</h3>
+<div class="callout"><strong>⚠ Belangrijke breuk met oudere skv1-iteraties:</strong> super-admin is géén <code>Gate::before</code>-callback meer en géén <code>users.is_super_admin</code> boolean. Beide zijn verwijderd in migraties <code>2026_05_09_120000</code> en <code>2026_05_09_120100</code>. Super-admin is nu <strong>een echte Spatie-rol</strong> die in iedere organisatie aan de gebruiker is toegekend.</div>
+
+<p>De controle gebeurt via <code>User::isSuperAdmin()</code>:</p>
+<pre><code>public function isSuperAdmin(): bool
+{
+    $registrar = app(PermissionRegistrar::class);
+    $teamsEnabled = $registrar-&gt;teams;
+    $registrar-&gt;teams = false;          // tijdelijk team-scoping uit
+    try {
+        return $this-&gt;roles()-&gt;where('name', 'super_admin')-&gt;exists();
+    } finally {
+        $registrar-&gt;teams = $teamsEnabled;
+    }
+}</code></pre>
+
+<p>Het tijdelijk uitschakelen van team-scoping is identiek aan het patroon dat Spatie zelf in <code>bootHasRoles()</code> gebruikt. We willen weten "heeft deze user <code>super_admin</code> ergens?" — niet "in de huidig actieve team-context".</p>
+<p>Cross-org propagatie van super-admin wordt gedaan door <strong><code>UserRoleSyncer::sync()</code></strong> (zie §6.2): wanneer iemand de super_admin-rol krijgt, wordt die in <em>elke</em> organisatie toegekend; wanneer hij wordt ingetrokken, in <em>elke</em> organisatie verwijderd.</p>
+
+<h3>5.4 Policies</h3>
+<p>Locatie: <code>app/Policies/</code></p>
+<table>
+<tr><th>Policy</th><th>Beschermt</th><th>Belangrijkste regels</th></tr>
+<tr><td><code>UserPolicy</code></td><td><code>User</code>-model</td><td><code>update()</code>/<code>delete()</code>: nooit jezelf, nooit een super-admin (tenzij je er zelf één bent), org-grens checken.</td></tr>
+<tr><td><code>OrganisationPolicy</code></td><td><code>Organisation</code>-model</td><td>Alleen super-admins mogen aanmaken/wijzigen/verwijderen.</td></tr>
+<tr><td><code>RolePolicy</code></td><td><code>Role</code>-model</td><td><code>roles.manage</code>-permission vereist. Verwijderen faalt als users de rol nog dragen.</td></tr>
+</table>
+<p>Geregistreerd in <code>AppServiceProvider::boot()</code>.</p>
+
+<h2 id="services">6. Services</h2>
+<p>Locatie: <code>app/Services/</code></p>
+<p>skv1 plaatst <strong>business logic in services</strong>, niet in controllers of Livewire-componenten. Livewire delegeert naar services zodra het iets meer is dan UI-state.</p>
+
+<h3>6.1 <code>InvitationService</code></h3>
+<p>Het hart van de invitation-workflow. Publieke methoden:</p>
+<table>
+<tr><th>Methode</th><th>Wat het doet</th></tr>
+<tr><td><code>invite($firstName, $middleName, $lastName, $email, $locale, $roles, $invitedBy, $organisationId)</code></td><td>Maakt <code>User</code> (status <code>pending_activation</code>), kent rollen toe via <code>UserRoleSyncer</code>, maakt <code>Invitation</code> (token, 7 dagen vervaltijd), zet <code>InvitationMail</code> in de queue, logt naar <code>activity('invitations')</code>. Alles in één DB-transactie.</td></tr>
+<tr><td><code>accept($token, $password, $totpSecret = null)</code></td><td>Valideert token, vervaltijd en cancellation. Zet <code>password</code>, <code>activated_at</code>, <code>status = 'active'</code>, optioneel 2FA-secret. Werpt <code>InvitationExpired</code> / <code>InvitationAlreadyAccepted</code> / <code>InvitationCancelled</code>.</td></tr>
+<tr><td><code>resendReminder($invitation, $actor)</code></td><td>Zet de mail opnieuw in de queue, schuift <code>expires_at</code> met nóg 7 dagen door, zet <code>reminder_sent_at</code>.</td></tr>
+<tr><td><code>cancel($invitation, $actor)</code></td><td>Soft-delete de uitgenodigde user — daarmee wordt de invitation impliciet "cancelled" (computed status).</td></tr>
+<tr><td><code>purgeExpired()</code></td><td>Aangeroepen door scheduler; verwijdert echt-vervallen invitation-records.</td></tr>
+</table>
+
+<h3>6.2 <code>UserRoleSyncer</code></h3>
+<p>Centrale rol-toewijzing. Splitst de gevraagde rollen in twee groepen:</p>
+<ul>
+    <li><strong>Reguliere rollen</strong>: alleen binnen de primaire organisatie van de user (<code>syncRoles()</code> met team-scope = primary org).</li>
+    <li><strong><code>super_admin</code></strong>: cross-org. Bij toekenning → in elke organisatie toevoegen. Bij intrekking → uit elke organisatie verwijderen. Gebruikt <code>PermissionRegistrar</code> om team-context te switchen.</li>
+</ul>
+<p>Wordt aangeroepen door <code>Livewire\Users\Edit</code> en door <code>InvitationService</code>.</p>
+
+<h3>6.3 <code>ImpersonationGuard</code></h3>
+<p>Validatie en lifecycle voor impersonation. Voorkomt:</p>
+<ul>
+    <li>Jezelf imiteren</li>
+    <li>Een super-admin imiteren (immer verboden)</li>
+    <li>Cross-org imiteren als je geen super-admin bent</li>
+    <li>Geneste impersonation</li>
+    <li>Lege of te lange reden (1–500 tekens)</li>
+</ul>
+<p>Werpt exceptions uit <code>app/Exceptions/Impersonation/</code>. Schrijft elke <code>start()</code> naar <code>activity('impersonation')</code>. <code>stop()</code> wordt aangeroepen door de POST <code>/impersonate/stop</code>-route.</p>
+
+<h3>6.4 <code>RoleBackfiller</code></h3>
+<p>Eénmalige migratie-utility. Itereert alle bestaande organisaties en triggert dezelfde logica als <code>OrganisationObserver::created()</code> plus repointing van pivots. Wordt aangeroepen door migratie <code>2026_05_09_184629_backfill_per_org_role_copies_for_existing_orgs.php</code>.</p>
+
+<h2 id="models">7. Models</h2>
+<p>Locatie: <code>app/Models/</code></p>
+<table>
+<tr><th>Model</th><th>Implements / Uses</th><th>Belangrijkste velden</th></tr>
+<tr><td><code>Organisation</code></td><td><code>SoftDeletes</code>, <code>HasFactory</code></td><td><code>name</code> (unique), <code>slug</code> (unique), <code>description</code></td></tr>
+<tr><td><code>User</code></td><td><code>TenantOwned</code>, <code>BelongsToOrganisation</code>, <code>HasRoles</code>, <code>Impersonate</code>, <code>SoftDeletes</code>, <code>Notifiable</code></td><td>profile (<code>first_name</code>, <code>middle_name</code>, <code>last_name</code>, <code>internal_id</code>, <code>phone</code>, <code>address</code>, <code>start_date</code>, <code>end_date</code>), auth (<code>email</code>, <code>password</code>), tenancy (<code>organisation_id</code>), status (<code>pending_activation</code>/<code>active</code>), 2FA (<code>two_factor_secret</code>, <code>two_factor_enabled_at</code>), locale</td></tr>
+<tr><td><code>Invitation</code></td><td><code>HasFactory</code></td><td><code>user_id</code>, <code>invited_by</code>, <code>token</code> (unique 64), <code>expires_at</code>, <code>reminder_sent_at</code>, <code>accepted_at</code></td></tr>
+<tr><td><code>Role</code> (extends Spatie)</td><td><code>TenantOwned</code>, <code>SoftDeletes</code></td><td>+ <code>team_id</code> van Spatie</td></tr>
+</table>
+
+<h3>7.1 Laravel 13 attribuut-fillable</h3>
+<p><code>User</code> gebruikt de nieuwe attribuut-syntax in plaats van <code>protected $fillable</code>:</p>
+<pre><code>#[Fillable([
+    'first_name', 'middle_name', 'last_name', /* … */
+])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'activation_token'])]
+class User extends Authenticatable implements TenantOwned</code></pre>
+
+<h3>7.2 Computed attributes</h3>
+<p><code>User::name</code> is afgeleid van <code>first_name + middle_name + last_name</code>:</p>
+<pre><code>protected function name(): Attribute
+{
+    return Attribute::get(fn () =&gt; trim(implode(' ', array_filter([
+        $this-&gt;first_name, $this-&gt;middle_name, $this-&gt;last_name,
+    ]))));
+}</code></pre>
+<p><code>Invitation::status</code> is een computed attribuut dat één van <code>pending</code> / <code>accepted</code> / <code>expired</code> / <code>cancelled</code> teruggeeft op basis van timestamps en <code>user-&gt;trashed()</code>.</p>
+
+<h3>7.3 PostgreSQL-specifieke scopes</h3>
+<p>Search-scopes op <code>User</code> gebruiken <code>ILIKE</code> (case-insensitive Postgres-operator):</p>
+<pre><code>public function scopeWhereNameLike(Builder $query, string $value): Builder
+{
+    $like = '%'.$value.'%';
+    return $query-&gt;where(fn ($q) =&gt; $q
+        -&gt;where('first_name', 'ILIKE', $like)
+        -&gt;orWhere('middle_name', 'ILIKE', $like)
+        -&gt;orWhere('last_name',   'ILIKE', $like)
+    );
+}</code></pre>
+<div class="note">Wanneer je MySQL ooit zou ondersteunen, breken deze scopes. Dit is bewust — skv1 ondersteunt <strong>uitsluitend</strong> PostgreSQL.</div>
+
+<h2 id="observers">8. Observers</h2>
+<p>Locatie: <code>app/Observers/</code></p>
+
+<h3>8.1 <code>OrganisationObserver</code></h3>
+<p>Geregistreerd in <code>AppServiceProvider::boot()</code>.</p>
+<table>
+<tr><th>Hook</th><th>Wat het doet</th></tr>
+<tr><td><code>created()</code></td><td>Materialiseert per-tenant kopieën van alle template-rollen. Propageert bestaande super-admins naar de nieuwe org (zodat zij ook hier <code>super_admin</code> hebben).</td></tr>
+<tr><td><code>deleted()</code> (= soft-delete)</td><td>Cascade-soft-delete van alle <code>TenantOwned</code>-modellen in deze org, met <strong>identieke timestamp</strong> zodat <code>restoring()</code> ze precies weer kan terugbrengen.</td></tr>
+<tr><td><code>restoring()</code></td><td>Maakt de cascade ongedaan.</td></tr>
+</table>
+<p>Wijzigingen aan dit observer raken de hele tenancy-laag — pas op.</p>
+
+<h2 id="auth">9. Authenticatie</h2>
+
+<h3>9.1 Geen publieke registratie</h3>
+<p>Er is <strong>geen <code>/register</code>-route</strong>. Nieuwe users komen uitsluitend binnen via een invitation (signed URL, 7 dagen geldig).</p>
+
+<h3>9.2 Sessions per subdomein</h3>
+<p>Configuratie in <code>config/session.php</code> (gevoed door <code>.env</code>):</p>
+<pre><code>SESSION_DRIVER=database
+SESSION_DOMAIN=null         # ← null = current host only, geen apex-share
+SESSION_SECURE_COOKIE=true  # ← vereist HTTPS (Herd: `herd secure`)
+SESSION_PATH=/
+SESSION_LIFETIME=120</code></pre>
+<p>Het belang van <code>SESSION_DOMAIN=null</code>: een sessie op <code>demo1.skv1.test</code> mag nooit gedeeld worden met <code>demo2.skv1.test</code> of de apex. Cookies blijven strak per subdomein.</p>
+
+<h3>9.3 2FA (opt-in)</h3>
+<p>Tijdens invitation-acceptatie kan de user optioneel TOTP instellen via <code>pragmarx/google2fa-laravel</code>. Het secret wordt versleuteld opgeslagen (<code>'two_factor_secret' =&gt; 'encrypted'</code> cast) en <code>two_factor_enabled_at</code> wordt gezet op het moment van activatie.</p>
+
+<h2 id="frontend">10. Frontend-architectuur</h2>
+
+<h3>10.1 Geen losse controllers — Livewire 4</h3>
+<p>Op <code>HealthCheckController</code> na bevat <code>app/Http/Controllers/</code> geen UI-controllers. Pagina's zijn <strong>Livewire-componenten</strong> die rechtstreeks aan een route worden gekoppeld:</p>
+<pre><code>Route::get('/admin/users', UserIndex::class)-&gt;name('users.index');</code></pre>
+<p>Dit is het Livewire 4 full-page-component patroon. De Livewire-class bepaalt zélf zijn layout via een <code>#[Layout('components.layouts.app')]</code> attribuut (of via convention).</p>
+
+<h3>10.2 Componenten per feature</h3>
+<p>Locatie: <code>app/Livewire/&lt;Feature&gt;/</code></p>
+<table>
+<tr><th>Feature</th><th>Componenten</th></tr>
+<tr><td><code>Activity/</code></td><td><code>Index</code></td></tr>
+<tr><td><code>Auth/</code></td><td><code>Login</code>, <code>Activate</code>, <code>ForgotPassword</code>, <code>ResetPassword</code></td></tr>
+<tr><td><code>Invitations/</code></td><td><code>Index</code>, <code>Send</code></td></tr>
+<tr><td><code>Organisations/</code></td><td><code>Index</code>, <code>Edit</code></td></tr>
+<tr><td><code>Roles/</code></td><td><code>Index</code>, <code>Edit</code></td></tr>
+<tr><td><code>Users/</code></td><td><code>Index</code>, <code>Edit</code>, <code>Impersonate</code></td></tr>
+</table>
+<p>Bijbehorende Blade-views in <code>resources/views/livewire/&lt;feature&gt;/</code>.</p>
+
+<h3>10.3 Layouts</h3>
+<p>Locatie: <code>resources/views/components/layouts/</code></p>
+<table>
+<tr><th>Layout</th><th>Gebruik</th></tr>
+<tr><td><code>app.blade.php</code></td><td>Authenticated layout met Flux-sidebar, navbar, dark-mode toggle.</td></tr>
+<tr><td><code>guest.blade.php</code></td><td>Auth-formulieren (login, password reset, invitation-accept). Centreert form in een max-width <code>md</code> container.</td></tr>
+</table>
+<p>Dark-mode wordt client-side bewaard in <code>localStorage</code> onder de sleutel <code>skv1-theme</code> (Alpine).</p>
+
+<h3>10.4 Flux UI Pro</h3>
+<p>Pro-componenten zijn beschikbaar dankzij een <code>auth.json</code> met de license-credentials. Build- en assets-pijplijn: Vite 8 + Tailwind v4 (<code>@tailwindcss/vite</code>).</p>
+
+<h3>10.5 Translaties</h3>
+<ul>
+    <li><code>lang/nl.json</code> — Nederlandse strings (default).</li>
+    <li><code>lang/vendor/backup/...</code> — Spatie Backup-vertalingen (auto-vendored).</li>
+    <li>Standaard locale: <code>nl</code>. Fallback: <code>en</code>.</li>
+</ul>
+<p>Per-user locale wordt opgeslagen in <code>users.locale</code> en geactiveerd door middleware (impliciet via Laravel's session-locale of expliciet in een toekomstige <code>SetLocale</code>-middleware — bij uitbreiding hier rekening mee houden).</p>
+
+<h2 id="routes">11. Routes</h2>
+
+<h3>11.1 <code>routes/web.php</code></h3>
+<table>
+<tr><th>Pad</th><th>Methode</th><th>Middleware</th><th>Component / handler</th></tr>
+<tr><td><code>/</code></td><td>GET</td><td>–</td><td>Inline redirect naar <code>dashboard</code> of <code>login</code></td></tr>
+<tr><td><code>/login</code></td><td>GET</td><td><code>guest</code></td><td><code>Auth\Login</code> (Livewire)</td></tr>
+<tr><td><code>/forgot-password</code></td><td>GET</td><td><code>guest</code></td><td><code>Auth\ForgotPassword</code></td></tr>
+<tr><td><code>/reset-password/{token}</code></td><td>GET</td><td><code>guest</code></td><td><code>Auth\ResetPassword</code></td></tr>
+<tr><td><code>/invitations/{token}/accept</code></td><td>GET</td><td><code>signed</code>, <code>guest</code></td><td><code>Auth\Activate</code></td></tr>
+<tr><td><code>/health-check</code></td><td>GET</td><td><code>HealthCheckAuth</code></td><td><code>HealthCheckController</code></td></tr>
+<tr><td><code>/dashboard</code></td><td>GET</td><td><code>auth</code></td><td>view <code>dashboard</code></td></tr>
+<tr><td><code>/admin/users</code></td><td>GET</td><td><code>auth</code></td><td><code>Users\Index</code></td></tr>
+<tr><td><code>/admin/users/{user}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>Users\Edit</code></td></tr>
+<tr><td><code>/admin/invitations</code></td><td>GET</td><td><code>auth</code></td><td><code>Invitations\Index</code></td></tr>
+<tr><td><code>/admin/roles</code></td><td>GET</td><td><code>auth</code></td><td><code>Roles\Index</code></td></tr>
+<tr><td><code>/admin/roles/create</code></td><td>GET</td><td><code>auth</code></td><td><code>Roles\Edit</code></td></tr>
+<tr><td><code>/admin/roles/{role}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>Roles\Edit</code></td></tr>
+<tr><td><code>/admin/organisations</code></td><td>GET</td><td><code>auth</code></td><td><code>Organisations\Index</code></td></tr>
+<tr><td><code>/admin/organisations/create</code></td><td>GET</td><td><code>auth</code></td><td><code>Organisations\Edit</code></td></tr>
+<tr><td><code>/admin/organisations/{organisation}/edit</code></td><td>GET</td><td><code>auth</code></td><td><code>Organisations\Edit</code></td></tr>
+<tr><td><code>/admin/activity</code></td><td>GET</td><td><code>auth</code></td><td><code>Activity\Index</code></td></tr>
+<tr><td><code>/impersonate/stop</code></td><td>POST</td><td><code>auth</code></td><td>inline (<code>ImpersonationGuard::stop</code>)</td></tr>
+<tr><td><code>/logout</code></td><td>POST</td><td><code>auth</code></td><td>inline (Auth::logout + session invalidate)</td></tr>
+</table>
+<p><code>ResolveTenant</code> is <strong>op alle web-routes actief</strong> omdat hij in <code>bootstrap/app.php</code> aan de globale <code>web</code>-stack is toegevoegd.</p>
+
+<h3>11.2 <code>routes/console.php</code></h3>
+<pre><code>Schedule::command('backup:clean')-&gt;dailyAt('01:00');
+Schedule::command('backup:run --only-db')-&gt;dailyAt('01:30');
+Schedule::call(fn () =&gt; app(InvitationService::class)-&gt;purgeExpired())
+    -&gt;daily()
+    -&gt;name('invitations:purge-expired');</code></pre>
+<p>Geen API-routes. Geen aparte <code>routes/auth.php</code>.</p>
+
+<h2 id="db">12. Database</h2>
+
+<h3>12.1 Connectie</h3>
+<p>PostgreSQL — geen MySQL/SQLite-fallback, <strong>niet inwisselbaar</strong>.</p>
+<pre><code>DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=skv1
+DB_USERNAME=postgres
+DB_PASSWORD=</code></pre>
+
+<h3>12.2 Migrations (chronologisch)</h3>
+<table>
+<tr><th>Bestand</th><th>Doel</th></tr>
+<tr><td><code>0001_01_01_000000_create_users_table.php</code></td><td>Laravel-default users-tabel (later flink uitgebreid).</td></tr>
+<tr><td><code>0001_01_01_000001_create_cache_table.php</code></td><td><code>cache</code> + <code>cache_locks</code>.</td></tr>
+<tr><td><code>0001_01_01_000002_create_jobs_table.php</code></td><td><code>jobs</code>, <code>job_batches</code>, <code>failed_jobs</code> (database-queue).</td></tr>
+<tr><td><code>2026_05_08_083924_create_activity_log_table.php</code></td><td>Spatie ActivityLog.</td></tr>
+<tr><td><code>2026_05_08_083924_create_permission_tables.php</code></td><td>Spatie Permission tabellen, met <code>team_id</code>.</td></tr>
+<tr><td><code>2026_05_08_083936_create_telescope_entries_table.php</code></td><td>Telescope.</td></tr>
+<tr><td><code>2026_05_08_100001_create_organisations_table.php</code></td><td><code>organisations</code> (id, name, slug, description, soft deletes).</td></tr>
+<tr><td><code>2026_05_08_100002_extend_users_table.php</code></td><td>Voegt tenancy- en auth-velden aan <code>users</code> toe (organisation_id, status, activation_*, 2FA, locale, soft deletes, plus een <code>is_super_admin</code>-boolean die later gedropt wordt).</td></tr>
+<tr><td><code>2026_05_08_100003_create_invitations_table.php</code></td><td><code>invitations</code> (token, expires_at, reminder_sent_at, accepted_at).</td></tr>
+<tr><td><code>2026_05_08_180000_add_profile_fields_to_users_table.php</code></td><td>Migreert van enkele <code>name</code>-kolom naar disaggregated profielvelden + backfill.</td></tr>
+<tr><td><code>2026_05_09_120000_assign_super_admin_role_to_legacy_flag_holders.php</code></td><td>Datamigratie: zet de Spatie <code>super_admin</code>-rol in elke organisatie voor users met de oude boolean.</td></tr>
+<tr><td><code>2026_05_09_120100_drop_is_super_admin_from_users_table.php</code></td><td>Schemamigratie: verwijdert <code>is_super_admin</code> definitief.</td></tr>
+<tr><td><code>2026_05_09_155104_add_soft_deletes_to_roles_table.php</code></td><td>Soft-deletes op <code>roles</code> (per-tenant role-isolatie).</td></tr>
+<tr><td><code>2026_05_09_184629_backfill_per_org_role_copies_for_existing_orgs.php</code></td><td>Roept <code>RoleBackfiller::backfillExistingOrganisations()</code> aan.</td></tr>
+</table>
+<div class="note"><strong>Foreign-key strategie:</strong> <code>users.organisation_id</code> is <code>restrictOnDelete</code> (eerst de users opruimen of soft-deleten via observer). <code>invitations.user_id</code> is <code>cascadeOnDelete</code>. <code>invitations.invited_by</code> is <code>restrictOnDelete</code>.</div>
+
+<h3>12.3 Seeders</h3>
+<p>Locatie: <code>database/seeders/</code></p>
+<table>
+<tr><th>Seeder</th><th>Doel</th></tr>
+<tr><td><code>DatabaseSeeder</code></td><td>Master, roept de andere aan.</td></tr>
+<tr><td><code>RolesAndPermissionsSeeder</code></td><td>Permissions + template-rollen (<code>super_admin</code>, <code>organisation_admin</code>, <code>test1</code>, <code>test2</code>).</td></tr>
+<tr><td><code>DemoOrganisationsSeeder</code></td><td><code>demo1</code>, <code>demo2</code> voor lokaal testen.</td></tr>
+<tr><td><code>DemoUsersSeeder</code></td><td>Demo-users in beide demo-organisaties met diverse rollen.</td></tr>
+</table>
+
+<h3>12.4 Factories</h3>
+<p>Locatie: <code>database/factories/</code></p>
+<p><code>UserFactory</code>, <code>OrganisationFactory</code>, <code>InvitationFactory</code>. <code>UserFactory</code> heeft states <code>superAdmin()</code>, <code>pending()</code> en <code>deactivated()</code>.</p>
+
+<h2 id="tests">13. Tests</h2>
+<p>Test-runner: <strong>Pest 4</strong>. Configuratie in <code>tests/Pest.php</code> en <code>phpunit.xml</code>. Suites:</p>
+<table>
+<tr><th>Suite</th><th>Map</th><th>Wat erin staat</th></tr>
+<tr><td>Unit</td><td><code>tests/Unit/</code></td><td>Geïsoleerde tests, momenteel <code>Migrations/SchemaTest.php</code>.</td></tr>
+<tr><td>Feature</td><td><code>tests/Feature/</code></td><td>HTTP- en Livewire-tests, gegroepeerd per feature (<code>Activity/</code>, <code>Auth/</code>, <code>Impersonation/</code>, <code>Invitations/</code>, <code>Models/</code>, <code>Navigation/</code>, <code>Organisations/</code>, <code>Roles/</code>, <code>Seeding/</code>, <code>Services/</code>, <code>Tenancy/</code>, <code>Users/</code> + losse files voor <code>ErrorPage</code>, <code>Factories</code>, <code>HealthCheck</code>, <code>Scheduler</code>).</td></tr>
+<tr><td>Arch</td><td><code>tests/Arch/</code></td><td>Architectuur-asserties: <code>TelescopeOnlyLocalArchTest</code> (Telescope mag niet in production-stack), <code>TenantOwnedArchTest</code> (alle tenant-modellen moeten het marker-contract implementeren).</td></tr>
+<tr><td>Browser</td><td><code>tests/Browser/Auth/</code></td><td><code>pest-plugin-browser</code> end-to-end tests.</td></tr>
+</table>
+
+<p><code>phpunit.xml</code> zet voor tests:</p>
+<pre><code>APP_ENV=testing
+DB_CONNECTION=pgsql        # tests draaien tegen een echte Postgres-test-DB
+SESSION_DRIVER=array
+CACHE_STORE=array
+QUEUE_CONNECTION=sync
+MAIL_MAILER=array
+BCRYPT_ROUNDS=4            # snelle hashes in tests</code></pre>
+
+<h3>13.1 Tests draaien</h3>
+<pre><code>composer test            # alle Pest-suites
+php artisan test --filter=Tenancy    # alleen tenancy-tests
+./vendor/bin/pest --parallel         # parallel, lokaal sneller</code></pre>
+
+<h2 id="config">14. Configuratie &amp; environment</h2>
+
+<h3>14.1 Belangrijke <code>.env</code>-variabelen</h3>
+<table>
+<tr><th>Variabele</th><th>Doel</th></tr>
+<tr><td><code>APP_URL</code></td><td>Volledige basis-URL incl. scheme, bv. <code>https://skv1.test</code>.</td></tr>
+<tr><td><code>APP_APEX_DOMAIN</code></td><td>Apex hostname voor tenant-resolutie, bv. <code>skv1.test</code>.</td></tr>
+<tr><td><code>APP_ADMIN_HOST</code></td><td>Apex-admin hostname, bv. <code>admin.skv1.test</code>.</td></tr>
+<tr><td><code>APP_LOCALE</code> / <code>APP_FALLBACK_LOCALE</code></td><td><code>nl</code> / <code>en</code>.</td></tr>
+<tr><td><code>DB_*</code></td><td>PostgreSQL-credentials.</td></tr>
+<tr><td><code>SESSION_*</code></td><td>Per-subdomein cookie-scope (zie §9.2).</td></tr>
+<tr><td><code>QUEUE_CONNECTION</code></td><td><code>database</code>.</td></tr>
+<tr><td><code>CACHE_STORE</code></td><td><code>database</code>.</td></tr>
+<tr><td><code>MAIL_*</code></td><td>Standaard SMTP naar Herd Pro mail-service (<code>127.0.0.1:2525</code>).</td></tr>
+<tr><td><code>HEALTH_CHECK_KEY</code></td><td>Header-token dat <code>/health-check</code> accepteert.</td></tr>
+<tr><td><code>TELESCOPE_ENABLED</code></td><td>Schakelt Telescope aan; alleen lokaal aan zetten.</td></tr>
+</table>
+
+<h3>14.2 Aangepaste config-files</h3>
+<table>
+<tr><th>Config</th><th>Wat is aangepast</th></tr>
+<tr><td><code>config/app.php</code></td><td><code>apex_domain</code>, <code>admin_host</code> toegevoegd; locale <code>nl</code>, fallback <code>en</code>, faker <code>nl_NL</code>.</td></tr>
+<tr><td><code>config/permission.php</code></td><td><code>role</code> model → <code>App\Models\Role</code>. Teams enabled.</td></tr>
+<tr><td><code>config/session.php</code></td><td>Driver <code>database</code>, secure cookies, domain <code>null</code>.</td></tr>
+<tr><td><code>config/database.php</code></td><td>Default <code>pgsql</code>.</td></tr>
+<tr><td><code>config/queue.php</code>, <code>config/cache.php</code></td><td><code>database</code>.</td></tr>
+<tr><td><code>config/backup.php</code></td><td>Spatie Backup-config (DB-only).</td></tr>
+<tr><td><code>config/telescope.php</code></td><td>Conditioneel geladen via <code>TelescopeServiceProvider</code>.</td></tr>
+</table>
+
+<h2 id="scheduler">15. Scheduler &amp; queue</h2>
+<table>
+<tr><th>Soort</th><th>Detail</th></tr>
+<tr><td>Queue-driver</td><td><code>database</code> (jobs in <code>jobs</code>-tabel).</td></tr>
+<tr><td>Worker</td><td><code>php artisan queue:listen</code> lokaal (gestart via <code>composer dev</code>). In productie: <code>php artisan queue:work</code> als systemd/supervisord.</td></tr>
+<tr><td>Scheduler</td><td><code>php artisan schedule:run</code> elk minuut (cron).</td></tr>
+<tr><td>Geplande taken</td><td>Backup clean (01:00), backup run (01:30), invitations purge (daily).</td></tr>
+</table>
+
+<h2 id="ci">16. CI</h2>
+<p>GitHub Actions workflow in <code>.github/workflows/</code>. Per push:</p>
+<ol>
+    <li>PHP setup, Composer install (cached).</li>
+    <li><code>vendor/bin/pint --test</code> — code style.</li>
+    <li><code>php artisan migrate --env=testing</code> tegen Postgres-service-container.</li>
+    <li><code>vendor/bin/pest</code> — Unit / Feature / Arch.</li>
+    <li><code>vendor/bin/pest --browser</code> — browser-suite.</li>
+</ol>
+
+<h2 id="waar">17. Waar vind ik...?</h2>
+<p>Snelle file-lookup voor veelvoorkomende vragen:</p>
+<table>
+<tr><th>Vraag</th><th>Antwoord</th></tr>
+<tr><td>Hoe wordt een nieuwe user aangemaakt?</td><td><code>app/Services/InvitationService.php::invite()</code></td></tr>
+<tr><td>Hoe verandert een rol?</td><td><code>app/Services/UserRoleSyncer.php::sync()</code></td></tr>
+<tr><td>Wie checkt of iemand super-admin is?</td><td><code>app/Models/User.php::isSuperAdmin()</code></td></tr>
+<tr><td>Wie zet de tenant-context?</td><td><code>app/Http/Middleware/ResolveTenant.php</code></td></tr>
+<tr><td>Waar wordt <code>organisation_id</code> automatisch gevuld?</td><td><code>app/Models/Concerns/BelongsToOrganisation.php</code></td></tr>
+<tr><td>Wat gebeurt er bij <code>Organisation::delete()</code>?</td><td><code>app/Observers/OrganisationObserver.php::deleted()</code></td></tr>
+<tr><td>Welke routes bestaan?</td><td><code>routes/web.php</code></td></tr>
+<tr><td>Waar zit de scheduler?</td><td><code>routes/console.php</code></td></tr>
+<tr><td>Welke permissions bestaan?</td><td><code>database/seeders/RolesAndPermissionsSeeder.php</code></td></tr>
+<tr><td>Hoe heet de invite-mail?</td><td><code>app/Mail/InvitationMail.php</code> + <code>resources/views/mail/invitation.blade.php</code></td></tr>
+<tr><td>Welke layouts zijn er?</td><td><code>resources/views/components/layouts/{app,guest}.blade.php</code></td></tr>
+<tr><td>Hoe weet ik of impersonation mag?</td><td><code>app/Services/ImpersonationGuard.php::assertActorMayImpersonate()</code></td></tr>
+<tr><td>Welke statussen kan een Invitation hebben?</td><td>computed attribuut in <code>app/Models/Invitation.php</code></td></tr>
+<tr><td>Waar staan de tests voor tenancy?</td><td><code>tests/Feature/Tenancy/</code></td></tr>
+<tr><td>Hoe roep ik in een view de huidige org aan?</td><td><code>tenant()</code> helper (zie <code>app/helpers.php</code>)</td></tr>
+</table>
+
+<h2 id="uitbreiden">18. Veelvoorkomende uitbreidingen</h2>
+
+<h3>18.1 Een nieuw tenant-owned model toevoegen</h3>
+<ol>
+    <li>Migratie: voeg <code>organisation_id</code>-kolom toe met FK naar <code>organisations</code> (<code>restrictOnDelete()</code>).</li>
+    <li>Model: voeg <code>use BelongsToOrganisation;</code> toe en <code>implements TenantOwned</code>.</li>
+    <li>Eventueel: voeg toe aan <code>OrganisationObserver</code>-cascade (gebeurt al automatisch via de <code>TenantOwned</code>-check).</li>
+    <li>Schrijf een arch-test: <code>tests/Arch/TenantOwnedArchTest.php</code> zou hem al moeten oppikken; check.</li>
+    <li>Schrijf een tenancy-test in <code>tests/Feature/Tenancy/</code> die verifieert dat queries gefilterd worden.</li>
+</ol>
+
+<h3>18.2 Een nieuwe permission toevoegen</h3>
+<ol>
+    <li>Voeg de string toe aan <code>RolesAndPermissionsSeeder</code> (lijst + toewijzing aan template-rollen).</li>
+    <li>Voeg een datamigratie toe die de permission in bestaande databases creëert en aan bestaande rollen toekent.</li>
+    <li>Update relevante policies en views (<code>@can(...)</code>).</li>
+</ol>
+
+<h3>18.3 Een nieuw subdomein-only feature toevoegen</h3>
+<p>Geen extra middleware nodig — <code>ResolveTenant</code> draait al globaal. Bewaak alleen in je policy/Livewire-component dat <code>tenant() !== null</code> voor pure tenant-features, of gebruik de <code>BelongsToOrganisation</code>-trait op het achterliggende model.</p>
+
+<h2 id="conventies">19. Conventies &amp; afspraken</h2>
+<ul>
+    <li><strong>Code style:</strong> Laravel Pint — <code>composer pint</code> voor formatting; CI faalt op stijlafwijkingen.</li>
+    <li><strong>Naam-conventies:</strong> Nederlandstalige UI-tekst, Engelstalige identifiers/code/comments.</li>
+    <li><strong>Model traits:</strong> <code>BelongsToOrganisation</code> is de enige skv1-eigen trait; staat in <code>app/Models/Concerns/</code>.</li>
+    <li><strong>Services:</strong> business logic woont in services, niet in controllers of Livewire-componenten.</li>
+    <li><strong>Logging:</strong> gebruik Spatie ActivityLog met expliciete <code>log_name</code> per feature (<code>'invitations'</code>, <code>'impersonation'</code>, …).</li>
+    <li><strong>Exceptions:</strong> per feature een eigen subnamespace onder <code>app/Exceptions/</code>.</li>
+    <li><strong>Tests:</strong> Pest, niet PHPUnit-stijl. Feature-tests gegroepeerd per feature-map.</li>
+    <li><strong>Geen factory rollouts</strong> in test-setup; gebruik factories per test.</li>
+</ul>
+
+<h2 id="historiek">20. Versie-historiek</h2>
+<table>
+<tr><th>Datum</th><th>Wijziging</th></tr>
+<tr><td>2026-05-10</td><td>Eerste versie van dit document.</td></tr>
+</table>
+
+</article>
+</body>
+</html>
