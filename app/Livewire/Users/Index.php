@@ -16,6 +16,17 @@ class Index extends Component
 
     public const PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
 
+    public const SORTABLE = [
+        'name', 'email', 'internal_id', 'phone', 'address',
+        'start_date', 'end_date', 'status', 'locale',
+    ];
+
+    #[Session]
+    public ?string $sortColumn = null;
+
+    #[Session]
+    public string $sortDirection = 'asc';
+
     #[Url(as: 'status')]
     public string $statusFilter = '';
 
@@ -57,10 +68,8 @@ class Index extends Component
 
     public function users()
     {
-        $query = User::query()->orderBy('last_name')->orderBy('first_name');
-        if ($this->statusFilter !== '') {
-            $query->where('status', $this->statusFilter);
-        }
+        $query = User::query();
+        $this->applySort($query);
 
         return $query->paginate($this->perPage);
     }
@@ -82,6 +91,44 @@ class Index extends Component
     public function updatedStatusFilter(): void
     {
         $this->resetPage();
+    }
+
+    public function sort(string $column): void
+    {
+        if (! in_array($column, self::SORTABLE, true)) {
+            return;
+        }
+        if ($this->sortColumn !== $column) {
+            $this->sortColumn = $column;
+            $this->sortDirection = 'asc';
+        } elseif ($this->sortDirection === 'asc') {
+            $this->sortDirection = 'desc';
+        } else {
+            $this->sortColumn = null;
+            $this->sortDirection = 'asc';
+        }
+        $this->resetPage();
+    }
+
+    public function updatedSortColumn(): void
+    {
+        if ($this->sortColumn !== null && ! in_array($this->sortColumn, self::SORTABLE, true)) {
+            $this->sortColumn = null;
+        }
+    }
+
+    protected function applySort(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        if ($this->sortColumn === null) {
+            $query->orderBy('last_name')->orderBy('first_name');
+            return;
+        }
+        $direction = $this->sortDirection === 'desc' ? 'desc' : 'asc';
+        match ($this->sortColumn) {
+            'name'  => $query->orderBy('last_name', $direction)
+                             ->orderBy('first_name', $direction),
+            default => $query->orderBy($this->sortColumn, $direction),
+        };
     }
 
     #[Layout('components.layouts.app')]

@@ -147,6 +147,55 @@ describe('Users Index Livewire', function () {
             ->set('perPage', 25)
             ->assertSet('paginators.page', 1);
     });
+
+    it('defaults to last_name → first_name when no sort is selected', function () {
+        User::factory()->for($this->org)->create(['first_name' => 'Anna',  'last_name' => 'Zilver']);
+        User::factory()->for($this->org)->create(['first_name' => 'Bart',  'last_name' => 'Aap']);
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->assertSet('sortColumn', null)
+            ->assertViewHas('users', function ($users) {
+                $rows = $users->getCollection()->pluck('last_name')->all();
+                return $rows[0] === 'Aap' && in_array('Zilver', $rows, true);
+            });
+    });
+
+    it('sorts by name asc, then desc, then back to default on third click', function () {
+        User::factory()->for($this->org)->create(['first_name' => 'A', 'last_name' => 'A']);
+        User::factory()->for($this->org)->create(['first_name' => 'Z', 'last_name' => 'Z']);
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Index::class)
+            ->call('sort', 'name')
+            ->assertSet('sortColumn', 'name')
+            ->assertSet('sortDirection', 'asc')
+            ->call('sort', 'name')
+            ->assertSet('sortColumn', 'name')
+            ->assertSet('sortDirection', 'desc')
+            ->call('sort', 'name')
+            ->assertSet('sortColumn', null);
+    });
+
+    it('sorts by email asc and desc when toggled', function () {
+        User::factory()->for($this->org)->create(['email' => 'aaa@demo1.local']);
+        User::factory()->for($this->org)->create(['email' => 'zzz@demo1.local']);
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('sort', 'email')
+            ->assertViewHas('users', fn ($users) => $users->getCollection()->first()->email === 'aaa@demo1.local')
+            ->call('sort', 'email')
+            ->assertViewHas('users', fn ($users) => $users->getCollection()->first()->email === 'zzz@demo1.local');
+    });
+
+    it('clamps an unknown sortColumn back to null', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('sortColumn', 'bogus_field')
+            ->assertSet('sortColumn', null);
+    });
 });
 
 describe('Users Edit Livewire', function () {
