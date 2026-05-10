@@ -53,11 +53,11 @@ describe('Users Index Livewire', function () {
         $this->actingAs($this->actor);
 
         Livewire::test(Index::class)
-            ->set('statusFilter', 'pending_activation')
+            ->set('filters.status', 'pending_activation')
             ->assertSee('Pending Pete')
             ->assertDontSee('Active Alice')
             ->assertDontSee('Disabled Dan');
-    })->skip('Wordt hersteld in Task 4 — statusFilter migreert naar $filters[status]');
+    });
 
     it('hides unselected columns and shows selected ones', function () {
         User::factory()->for($this->org)->create([
@@ -263,6 +263,19 @@ describe('Users Index Livewire', function () {
             ->assertSee('Pieters')
             ->assertSee('Bert')
             ->assertDontSee('Yssel');
+    });
+
+    it('locale filter limits results to one locale', function () {
+        User::factory()->for($this->org)->create(['email' => 'nl1@demo1.local', 'locale' => 'nl']);
+        User::factory()->for($this->org)->create(['email' => 'nl2@demo1.local', 'locale' => 'nl']);
+        User::factory()->for($this->org)->create(['email' => 'en1@demo1.local', 'locale' => 'en']);
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.locale', 'en')
+            ->assertSee('en1@demo1.local')
+            ->assertDontSee('nl1@demo1.local')
+            ->assertDontSee('nl2@demo1.local');
     });
 });
 

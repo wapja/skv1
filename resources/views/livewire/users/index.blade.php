@@ -13,13 +13,6 @@
 
     <div class="flex items-end justify-between gap-4">
         <div class="flex flex-wrap items-end gap-4">
-            <flux:select wire:model.live="statusFilter" label="{{ __('Status') }}">
-                <option value="">{{ __('Alle statussen') }}</option>
-                <option value="active">{{ __('Actief') }}</option>
-                <option value="pending_activation">{{ __('Wachtend op activering') }}</option>
-                <option value="disabled">{{ __('Uitgeschakeld') }}</option>
-            </flux:select>
-
             <flux:dropdown>
                 <flux:button icon="adjustments-horizontal" variant="ghost">
                     {{ __('Kolommen') }}

@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -37,9 +36,6 @@ class Index extends Component
 
     #[Session]
     public string $sortDirection = 'asc';
-
-    #[Url(as: 'status')]
-    public string $statusFilter = '';
 
     #[Session]
     public int $perPage = 10;
@@ -100,11 +96,6 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function updatedStatusFilter(): void
-    {
-        $this->resetPage();
-    }
-
     public function sort(string $column): void
     {
         if (! in_array($column, self::SORTABLE, true)) {
@@ -145,6 +136,8 @@ class Index extends Component
                 }),
                 'email', 'internal_id', 'phone', 'address'
                     => $query->where($key, 'ILIKE', '%' . $value . '%'),
+                'status', 'locale'
+                    => $query->where($key, $value),
                 default => null,
             };
         }
