@@ -2,6 +2,41 @@
 
 Alle noemenswaardige wijzigingen aan dit project. Versies volgen [Semantic Versioning](https://semver.org).
 
+## [0.1.5] — 2026-05-10
+
+### Changed
+
+- **Livewire-architectuur omgezet naar Livewire 4 multi-file
+  componenten (MFC).** Alle 14 componenten (Activity, Auth × 4,
+  Invitations × 2, Organisations × 2, Roles × 2, Users × 3) en hun
+  views verplaatst van `app/Livewire/` + `resources/views/livewire/`
+  naar één gecombineerde directory per component:
+  `resources/views/components/<feature>/⚡<naam>/<naam>.{php,blade.php}`.
+- Klassen zijn nu anonymous (`new class extends Component { … }`);
+  `render()` gebruikt `$this->view([...])` zonder expliciete view-naam
+  — Livewire mapt automatisch op de naast gelegen Blade.
+- Routes gebruiken nu `Route::livewire('/path', 'feature.naam')` met
+  string-componentnaam in plaats van `Route::get(..., Class::class)`.
+  Alle route-namen zijn ongewijzigd, dus `route()`-helpers en
+  `wire:navigate` links blijven werken.
+- Tests gebruiken nu `Livewire::test('feature.naam')` (string) in
+  plaats van `Livewire::test(Class::class)`. `assertSeeLivewire()`
+  idem met de string-componentnaam.
+- Partials (`column-filter` voor Users en Invitations) verhuisd naar
+  hun MFC-directory; `@include`-paden bijgewerkt.
+- `App\Livewire\Users\Index::PER_PAGE_OPTIONS` en
+  `App\Livewire\Invitations\Index::PER_PAGE_OPTIONS` waren via FQN
+  toegankelijk vanuit views; anonymous classes hebben geen FQN, dus
+  toegevoegd: `perPageOptions(): array` helper-methode op beide
+  componenten. Views roepen nu `$this->perPageOptions()`.
+- Documentatie: sectie 10 in `docs/technische-beschrijving.md` en
+  guideline 11 in `skv1_create.md` aangepast aan de nieuwe structuur.
+
+### Removed
+
+- `app/Livewire/` directory (was 14 PHP-klassen).
+- `resources/views/livewire/` directory (was 14 views + 2 partials).
+
 ## [0.1.4] — 2026-05-08
 
 ### Added
