@@ -45,3 +45,5 @@ skv1_uitleg.html
 !/storage/app/public/.gitignore
 /database/database.sqlite
 /database/database.sqlite-*
+
+.superpowers/
