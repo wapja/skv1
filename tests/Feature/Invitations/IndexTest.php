@@ -201,4 +201,70 @@ describe('Invitations Index Livewire', function () {
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u2->id);
     });
+
+    it('derives status from accepted_at / expires_at / user.deleted_at', function () {
+        $u_pending  = User::factory()->for($this->org)->create();
+        $u_accepted = User::factory()->for($this->org)->create();
+        $u_expired  = User::factory()->for($this->org)->create();
+        $u_cancelled= User::factory()->for($this->org)->create();
+
+        $i_p = Invitation::factory()->create(['user_id' => $u_pending->id,   'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+        $i_a = Invitation::factory()->create(['user_id' => $u_accepted->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => now()]);
+        $i_e = Invitation::factory()->create(['user_id' => $u_expired->id,   'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => null]);
+        $i_c = Invitation::factory()->create(['user_id' => $u_cancelled->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+        $u_cancelled->delete();
+
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test(Index::class);
+
+        $i_p->load(['user' => fn ($q) => $q->withTrashed()]);
+        $i_a->load(['user' => fn ($q) => $q->withTrashed()]);
+        $i_e->load(['user' => fn ($q) => $q->withTrashed()]);
+        $i_c->load(['user' => fn ($q) => $q->withTrashed()]);
+
+        expect($component->instance()->status($i_p))->toBe('pending')
+            ->and($component->instance()->status($i_a))->toBe('accepted')
+            ->and($component->instance()->status($i_e))->toBe('expired')
+            ->and($component->instance()->status($i_c))->toBe('cancelled');
+    });
+
+    it('sorts by status in stable order (accepted → pending → expired → cancelled)', function () {
+        $u_pending  = User::factory()->for($this->org)->create();
+        $u_accepted = User::factory()->for($this->org)->create();
+        $u_expired  = User::factory()->for($this->org)->create();
+        $u_cancelled= User::factory()->for($this->org)->create();
+
+        Invitation::factory()->create(['user_id' => $u_pending->id,   'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+        Invitation::factory()->create(['user_id' => $u_accepted->id,  'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => now()]);
+        Invitation::factory()->create(['user_id' => $u_expired->id,   'invited_by' => $this->actor->id, 'expires_at' => now()->subDays(1), 'accepted_at' => null]);
+        Invitation::factory()->create(['user_id' => $u_cancelled->id, 'invited_by' => $this->actor->id, 'expires_at' => now()->addDays(3), 'accepted_at' => null]);
+        $u_cancelled->delete();
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('sort', 'status')
+            ->assertViewHas('invitations', function ($invs) use ($u_accepted, $u_pending, $u_expired, $u_cancelled) {
+                $userIds = $invs->getCollection()->pluck('user_id')->all();
+                return $userIds === [$u_accepted->id, $u_pending->id, $u_expired->id, $u_cancelled->id];
+            });
+    });
+
+    it('sorts by email, name, inviter asc and desc', function () {
+        $u1 = User::factory()->for($this->org)->create(['email' => 'aaa@demo1.local', 'first_name' => 'A', 'last_name' => 'A']);
+        $u2 = User::factory()->for($this->org)->create(['email' => 'zzz@demo1.local', 'first_name' => 'Z', 'last_name' => 'Z']);
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id]);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('sort', 'email')
+            ->assertViewHas('invitations', fn ($i) => $i->getCollection()->first()->user_id === $u1->id)
+            ->call('sort', 'email')
+            ->assertViewHas('invitations', fn ($i) => $i->getCollection()->first()->user_id === $u2->id)
+            ->call('sort', 'name')
+            ->assertViewHas('invitations', fn ($i) => $i->getCollection()->first()->user_id === $u1->id);
+    });
 });

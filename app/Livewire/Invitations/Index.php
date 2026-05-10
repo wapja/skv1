@@ -3,6 +3,7 @@
 namespace App\Livewire\Invitations;
 
 use App\Models\Invitation;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Session;
@@ -43,6 +44,14 @@ class Index extends Component
     /** @var array<int,string> */
     #[Session]
     public array $selectedColumns = ['email', 'name', 'status'];
+
+    public function status(Invitation $invitation): string
+    {
+        if ($invitation->accepted_at !== null)        return 'accepted';
+        if ($invitation->user?->trashed())             return 'cancelled';
+        if ($invitation->expires_at?->isPast())        return 'expired';
+        return 'pending';
+    }
 
     /** @return array<string,string> */
     public function availableColumns(): array
@@ -166,7 +175,34 @@ class Index extends Component
         match ($this->sortColumn) {
             'sent_at'    => $query->orderBy('invitations.created_at', $direction),
             'expires_at' => $query->orderBy('invitations.expires_at', $direction),
-            default      => null,
+
+            'email' => $query->orderBy(
+                User::withTrashed()->select('email')
+                    ->whereColumn('users.id', 'invitations.user_id'),
+                $direction
+            ),
+
+            'name' => $query
+                ->orderBy(User::withTrashed()->select('last_name')->whereColumn('users.id', 'invitations.user_id'), $direction)
+                ->orderBy(User::withTrashed()->select('first_name')->whereColumn('users.id', 'invitations.user_id'), $direction),
+
+            'inviter' => $query->orderBy(
+                User::query()->select('email')
+                    ->whereColumn('users.id', 'invitations.invited_by'),
+                $direction
+            ),
+
+            'status' => $query->orderByRaw(
+                "CASE
+                    WHEN invitations.accepted_at IS NOT NULL THEN 1
+                    WHEN (SELECT deleted_at FROM users WHERE users.id = invitations.user_id) IS NOT NULL THEN 4
+                    WHEN invitations.expires_at < ? THEN 3
+                    ELSE 2
+                  END {$direction}",
+                [now()]
+            ),
+
+            default => null,
         };
     }
 
