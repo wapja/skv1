@@ -97,4 +97,17 @@ describe('Invitations Index Livewire', function () {
             ->set('filters.name', 'Anna')
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 3);
     });
+
+    it('inviter filter matches inviter email', function () {
+        $invited = User::factory()->for($this->org)->create();
+        $other_inviter = User::factory()->for($this->org)->create(['email' => 'other@demo1.local']);
+        Invitation::factory()->create(['user_id' => $invited->id, 'invited_by' => $this->actor->id]);
+        Invitation::factory()->create(['user_id' => $invited->id, 'invited_by' => $other_inviter->id]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.inviter', 'admin')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1);
+    });
 });

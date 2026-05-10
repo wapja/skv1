@@ -122,7 +122,10 @@ class Index extends Component
                     );
                 }),
 
-                default => null, // andere arms volgen in Tasks 3-5
+                'inviter' => $query->whereHas('inviter', fn ($q) => $q
+                    ->where('email', 'ILIKE', '%'.$value.'%')),
+
+                default => null, // andere arms volgen in Tasks 4-5
             };
         }
     }
