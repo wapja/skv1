@@ -23,8 +23,6 @@ class Index extends Component
         'email', 'name', 'status', 'inviter', 'expires_at', 'sent_at',
     ];
 
-    public const STATUSES = ['pending', 'accepted', 'expired', 'cancelled'];
-
     public const DEFAULT_FILTERS = [
         'email' => '', 'name' => '', 'status' => '',
         'inviter' => '', 'expires_at' => '', 'sent_at' => '',
@@ -49,17 +47,7 @@ class Index extends Component
 
     public function status(Invitation $invitation): string
     {
-        if ($invitation->accepted_at !== null) {
-            return 'accepted';
-        }
-        if ($invitation->user?->trashed()) {
-            return 'cancelled';
-        }
-        if ($invitation->expires_at?->isPast()) {
-            return 'expired';
-        }
-
-        return 'pending';
+        return $invitation->status;
     }
 
     /** @return array<string,string> */
@@ -108,7 +96,7 @@ class Index extends Component
             array_flip($valid),
         );
 
-        if (! in_array($this->filters['status'], array_merge([''], self::STATUSES), true)) {
+        if (! in_array($this->filters['status'], array_merge([''], Invitation::STATUSES), true)) {
             $this->filters['status'] = '';
         }
 
@@ -155,10 +143,7 @@ class Index extends Component
 
     #[On('invitation-sent')]
     #[On('invitation-cancelled')]
-    public function refresh(): void
-    {
-        // Trigger re-render
-    }
+    public function refresh(): void {}
 
     public function invitations()
     {
@@ -180,22 +165,11 @@ class Index extends Component
                 continue;
             }
             match ($key) {
-                'email' => $query->whereHas('user', fn ($q) => $q->withTrashed()
-                    ->where('email', 'ILIKE', '%'.$value.'%')),
+                'email' => $query->whereHas('user', fn ($q) => $q->withTrashed()->whereEmailLike($value)),
+                'name' => $query->whereHas('user', fn ($q) => $q->withTrashed()->whereNameLike($value)),
+                'inviter' => $query->whereHas('inviter', fn ($q) => $q->whereEmailLike($value)),
 
-                'name' => $query->whereHas('user', function ($q) use ($value) {
-                    $like = '%'.$value.'%';
-                    $q->withTrashed()->where(fn ($qq) => $qq
-                        ->where('first_name', 'ILIKE', $like)
-                        ->orWhere('middle_name', 'ILIKE', $like)
-                        ->orWhere('last_name', 'ILIKE', $like)
-                    );
-                }),
-
-                'inviter' => $query->whereHas('inviter', fn ($q) => $q
-                    ->where('email', 'ILIKE', '%'.$value.'%')),
-
-                'status' => $this->applyStatusFilter($query, $value),
+                'status' => $query->whereStatus($value),
 
                 'expires_at' => $query->whereDate('invitations.expires_at', '>=', $value),
                 'sent_at' => $query->whereDate('invitations.created_at', '>=', $value),
@@ -203,25 +177,6 @@ class Index extends Component
                 default => null,
             };
         }
-    }
-
-    protected function applyStatusFilter(Builder $query, string $value): void
-    {
-        match ($value) {
-            'pending' => $query->whereNull('accepted_at')
-                ->where('expires_at', '>=', now())
-                ->whereHas('user', fn ($q) => $q->whereNull('deleted_at')),
-
-            'accepted' => $query->whereNotNull('accepted_at'),
-
-            'expired' => $query->whereNull('accepted_at')
-                ->where('expires_at', '<', now())
-                ->whereHas('user', fn ($q) => $q->whereNull('deleted_at')),
-
-            'cancelled' => $query->whereHas('user', fn ($q) => $q->onlyTrashed()),
-
-            default => null,
-        };
     }
 
     protected function applySort(Builder $query): void
@@ -254,15 +209,7 @@ class Index extends Component
                 $direction
             ),
 
-            'status' => $query->orderByRaw(
-                "CASE
-                    WHEN invitations.accepted_at IS NOT NULL THEN 1
-                    WHEN (SELECT deleted_at FROM users WHERE users.id = invitations.user_id) IS NOT NULL THEN 4
-                    WHEN invitations.expires_at < ? THEN 3
-                    ELSE 2
-                  END {$direction}",
-                [now()]
-            ),
+            'status' => $query->orderByStatus($direction),
 
             default => null,
         };
@@ -276,13 +223,9 @@ class Index extends Component
 
     public function hasNoFilters(): bool
     {
-        foreach ($this->filters as $value) {
-            if ($value !== '' && $value !== null) {
-                return false;
-            }
-        }
-
-        return true;
+        return collect($this->filters)
+            ->filter(fn ($v) => $v !== '' && $v !== null)
+            ->isEmpty();
     }
 
     #[Layout('components.layouts.app')]

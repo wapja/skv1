@@ -7,6 +7,7 @@ use App\Models\Concerns\BelongsToOrganisation;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -102,5 +103,21 @@ class User extends Authenticatable implements TenantOwned
     public function invitations(): HasMany
     {
         return $this->hasMany(Invitation::class);
+    }
+
+    public function scopeWhereNameLike(Builder $query, string $value): Builder
+    {
+        $like = '%'.$value.'%';
+
+        return $query->where(fn ($q) => $q
+            ->where('first_name', 'ILIKE', $like)
+            ->orWhere('middle_name', 'ILIKE', $like)
+            ->orWhere('last_name', 'ILIKE', $like)
+        );
+    }
+
+    public function scopeWhereEmailLike(Builder $query, string $value): Builder
+    {
+        return $query->where('email', 'ILIKE', '%'.$value.'%');
     }
 }

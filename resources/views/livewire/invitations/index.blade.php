@@ -64,6 +64,7 @@
                 </flux:table.row>
 
                 @foreach ($invitations as $invitation)
+                    @php($status = $invitation->status)
                     <flux:table.row :key="$invitation->id">
                         @foreach ($columns as $key => $label)
                             @if (in_array($key, $selectedColumns, true))
@@ -71,7 +72,7 @@
                                     @switch($key)
                                         @case('email')      {{ $invitation->user?->email ?? '—' }} @break
                                         @case('name')       {{ $invitation->user?->name ?? '—' }} @break
-                                        @case('status')     {{ __($this->status($invitation)) }} @break
+                                        @case('status')     {{ __($status) }} @break
                                         @case('inviter')    {{ $invitation->inviter?->email ?? '—' }} @break
                                         @case('expires_at') {{ $invitation->expires_at?->isoFormat('LLL') ?? '—' }} @break
                                         @case('sent_at')    {{ $invitation->created_at?->isoFormat('LLL') ?? '—' }} @break
@@ -81,7 +82,7 @@
                         @endforeach
                         <flux:table.cell>
                             <div class="flex gap-2">
-                                @if ($this->status($invitation) === 'pending')
+                                @if ($status === 'pending')
                                     @can('invitations.send')
                                         <flux:button size="sm" variant="ghost" wire:click="resend({{ $invitation->id }})">
                                             {{ __('Herinnering') }}

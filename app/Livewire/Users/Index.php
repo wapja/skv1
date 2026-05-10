@@ -152,12 +152,7 @@ class Index extends Component
                 continue;
             }
             match ($key) {
-                'name' => $query->where(function ($q) use ($value) {
-                    $like = '%'.$value.'%';
-                    $q->where('first_name', 'ILIKE', $like)
-                        ->orWhere('middle_name', 'ILIKE', $like)
-                        ->orWhere('last_name', 'ILIKE', $like);
-                }),
+                'name' => $query->whereNameLike($value),
                 'email', 'internal_id', 'phone', 'address' => $query->where($key, 'ILIKE', '%'.$value.'%'),
                 'status', 'locale' => $query->where($key, $value),
                 'start_date', 'end_date' => $query->whereDate($key, '>=', $value),
@@ -189,13 +184,9 @@ class Index extends Component
 
     public function hasNoFilters(): bool
     {
-        foreach ($this->filters as $value) {
-            if ($value !== '' && $value !== null) {
-                return false;
-            }
-        }
-
-        return true;
+        return collect($this->filters)
+            ->filter(fn ($v) => $v !== '' && $v !== null)
+            ->isEmpty();
     }
 
     #[Layout('components.layouts.app')]
