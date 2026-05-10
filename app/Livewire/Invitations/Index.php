@@ -127,7 +127,10 @@ class Index extends Component
 
                 'status' => $this->applyStatusFilter($query, $value),
 
-                default => null, // andere arms volgen in Task 5
+                'expires_at' => $query->whereDate('invitations.expires_at', '>=', $value),
+                'sent_at'    => $query->whereDate('invitations.created_at', '>=', $value),
+
+                default => null,
             };
         }
     }

@@ -173,4 +173,32 @@ describe('Invitations Index Livewire', function () {
             ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
                 && $invs->getCollection()->first()->user_id === $u2->id);
     });
+
+    it('expires_at filter is "≥"', function () {
+        $u1 = User::factory()->for($this->org)->create();
+        $u2 = User::factory()->for($this->org)->create();
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id, 'expires_at' => '2026-01-01 00:00:00']);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id, 'expires_at' => '2026-06-01 00:00:00']);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.expires_at', '2026-03-01')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->user_id === $u2->id);
+    });
+
+    it('sent_at filter is "≥" on created_at', function () {
+        $u1 = User::factory()->for($this->org)->create();
+        $u2 = User::factory()->for($this->org)->create();
+        Invitation::factory()->create(['user_id' => $u1->id, 'invited_by' => $this->actor->id, 'created_at' => '2025-12-15 00:00:00', 'updated_at' => '2025-12-15 00:00:00']);
+        Invitation::factory()->create(['user_id' => $u2->id, 'invited_by' => $this->actor->id, 'created_at' => '2026-04-15 00:00:00', 'updated_at' => '2026-04-15 00:00:00']);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.sent_at', '2026-01-01')
+            ->assertViewHas('invitations', fn ($invs) => $invs->total() === 1
+                && $invs->getCollection()->first()->user_id === $u2->id);
+    });
 });
