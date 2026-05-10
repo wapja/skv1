@@ -332,6 +332,17 @@ describe('Users Index Livewire', function () {
             ->set('selectedColumns', ['name', 'status'])
             ->assertSet('filters.email', '');
     });
+
+    it('resets to page 1 on sort change', function () {
+        User::factory()->count(30)->for($this->org)->create();
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->call('sort', 'email')
+            ->assertSet('paginators.page', 1);
+    });
 });
 
 describe('Users Edit Livewire', function () {
