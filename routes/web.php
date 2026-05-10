@@ -11,6 +11,7 @@ use App\Livewire\Organisations\Edit as OrganisationEdit;
 use App\Livewire\Organisations\Index as OrganisationIndex;
 use App\Livewire\Roles\Edit as RoleEdit;
 use App\Livewire\Roles\Index as RoleIndex;
+use App\Livewire\Invitations\Index as InvitationIndex;
 use App\Livewire\Users\Edit as UserEdit;
 use App\Livewire\Users\Index as UserIndex;
 use App\Services\ImpersonationGuard;
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/users', UserIndex::class)->name('users.index');
     Route::get('/admin/users/{user}/edit', UserEdit::class)->name('users.edit');
+    Route::get('/admin/invitations', InvitationIndex::class)->name('invitations.index');
     Route::get('/admin/roles', RoleIndex::class)->name('roles.index');
     Route::get('/admin/roles/create', RoleEdit::class)->name('roles.create');
     Route::get('/admin/roles/{role}/edit', RoleEdit::class)->name('roles.edit');
