@@ -82,6 +82,24 @@ class Index extends Component
         return $query->paginate($this->perPage);
     }
 
+    public function updatedFilters(): void
+    {
+        $valid = array_keys(self::DEFAULT_FILTERS);
+        $this->filters = array_intersect_key(
+            array_merge(self::DEFAULT_FILTERS, $this->filters),
+            array_flip($valid),
+        );
+
+        if (! in_array($this->filters['status'], ['', 'active', 'pending_activation', 'disabled'], true)) {
+            $this->filters['status'] = '';
+        }
+        if (! in_array($this->filters['locale'], ['', 'nl', 'en'], true)) {
+            $this->filters['locale'] = '';
+        }
+
+        $this->resetPage();
+    }
+
     public function updatedSelectedColumns(): void
     {
         $valid = array_keys($this->availableColumns());

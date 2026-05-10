@@ -291,6 +291,37 @@ describe('Users Index Livewire', function () {
             ->assertSee('future@demo1.local')
             ->assertDontSee('past@demo1.local');
     });
+
+    it('sanitises unknown filter keys from session state', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters', ['name' => 'Bob', 'bogus_key' => 'x', 'email' => 'demo'])
+            ->assertSet('filters.name', 'Bob')
+            ->assertSet('filters.email', 'demo')
+            ->tap(function ($component) {
+                expect(array_key_exists('bogus_key', $component->get('filters')))->toBeFalse();
+            });
+    });
+
+    it('clamps invalid status filter values back to empty string', function () {
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->set('filters.status', 'banana')
+            ->assertSet('filters.status', '');
+    });
+
+    it('resets to page 1 when any filter changes', function () {
+        User::factory()->count(30)->for($this->org)->create();
+        $this->actingAs($this->actor);
+
+        Livewire::test(Index::class)
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->set('filters.name', 'x')
+            ->assertSet('paginators.page', 1);
+    });
 });
 
 describe('Users Edit Livewire', function () {
