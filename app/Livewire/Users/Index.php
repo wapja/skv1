@@ -3,6 +3,7 @@
 namespace App\Livewire\Users;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Session;
 use Livewire\Attributes\Title;
@@ -114,10 +115,11 @@ class Index extends Component
     {
         if ($this->sortColumn !== null && ! in_array($this->sortColumn, self::SORTABLE, true)) {
             $this->sortColumn = null;
+            $this->sortDirection = 'asc';
         }
     }
 
-    protected function applySort(\Illuminate\Database\Eloquent\Builder $query): void
+    protected function applySort(Builder $query): void
     {
         if ($this->sortColumn === null) {
             $query->orderBy('last_name')->orderBy('first_name');
