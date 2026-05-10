@@ -22,6 +22,15 @@ class Index extends Component
         'start_date', 'end_date', 'status', 'locale',
     ];
 
+    public const DEFAULT_FILTERS = [
+        'name' => '', 'email' => '', 'internal_id' => '',
+        'phone' => '', 'address' => '', 'start_date' => '',
+        'end_date' => '', 'status' => '', 'locale' => '',
+    ];
+
+    /** @var array<string,string> */
+    public array $filters = self::DEFAULT_FILTERS;
+
     #[Session]
     public ?string $sortColumn = null;
 
@@ -70,6 +79,7 @@ class Index extends Component
     public function users()
     {
         $query = User::query();
+        $this->applyFilters($query);
         $this->applySort($query);
 
         return $query->paginate($this->perPage);
@@ -116,6 +126,20 @@ class Index extends Component
         if ($this->sortColumn !== null && ! in_array($this->sortColumn, self::SORTABLE, true)) {
             $this->sortColumn = null;
             $this->sortDirection = 'asc';
+        }
+    }
+
+    protected function applyFilters(Builder $query): void
+    {
+        foreach ($this->filters as $key => $value) {
+            if ($value === '' || $value === null) {
+                continue;
+            }
+            match ($key) {
+                'email', 'internal_id', 'phone', 'address'
+                    => $query->where($key, 'ILIKE', '%' . $value . '%'),
+                default => null,
+            };
         }
     }
 
