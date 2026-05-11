@@ -329,6 +329,21 @@ describe('Super admin template editing', function () {
         expect($role->fresh()->team_id)->toBe($this->org->id);
     });
 
+    it('ignores organisationId from a non-super-admin payload (no privilege escalation)', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2']);
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $this->actingAs($this->actor);
+
+        // Even though the org_admin payload sets organisationId, the server-side
+        // $wantsMove gate requires isSuperAdmin() so team_id must not change.
+        Livewire::test('roles.edit', ['role' => $role])
+            ->set('organisationId', $otherOrg->id)
+            ->call('save');
+
+        expect($role->fresh()->team_id)->toBe($this->org->id);
+    });
+
 });
 
 describe('Create mode', function () {
