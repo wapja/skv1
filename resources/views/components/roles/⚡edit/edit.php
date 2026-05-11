@@ -37,23 +37,29 @@ new class extends Component
             $this->authorize('create', Role::class);
         }
 
+        $nameUnchanged = $this->role !== null && $this->name === $this->role->name;
+        $scopeTeamId = $this->role !== null ? $this->role->team_id : tenant()?->id;
+
         $this->validate([
             'name' => [
                 'required', 'string', 'max:255', 'alpha_dash',
                 Rule::unique('roles')
                     ->where(fn ($q) => $q
                         ->where('guard_name', 'web')
-                        ->where('team_id', $this->role?->team_id ?? tenant()?->id))
+                        ->where('team_id', $scopeTeamId))
                     ->ignore($this->role?->id),
-                Rule::notIn(['super_admin', 'organisation_admin', 'member']),
-                function ($attribute, $value, $fail): void {
+                $nameUnchanged ? null : Rule::notIn(['super_admin', 'organisation_admin', 'member']),
+                function ($attribute, $value, $fail) use ($nameUnchanged): void {
+                    if ($nameUnchanged) {
+                        return;
+                    }
                     $clash = Role::query()
                         ->whereNull('team_id')
                         ->where('name', $value)
                         ->where('guard_name', 'web')
                         ->exists();
                     if ($clash) {
-                        $fail(__('Deze naam is gereserveerd voor een sjabloonrol.'));
+                        $fail(__('Deze naam is gereserveerd voor een rol zonder organisatie.'));
                     }
                 },
             ],

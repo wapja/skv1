@@ -49,6 +49,18 @@ describe('RolePolicy', function () {
 
         expect(Gate::allows('create', Role::class))->toBeFalse();
     });
+
+    it('allows super_admin to update and delete template (geen organisatie) roles', function () {
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $template = Role::where('name', 'organisation_admin')->whereNull('team_id')->firstOrFail();
+
+        $this->actingAs($superAdmin);
+
+        expect(Gate::allows('update', $template))->toBeTrue()
+            ->and(Gate::allows('delete', $template))->toBeTrue();
+    });
 });
 
 describe('Roles Index Livewire', function () {
@@ -163,6 +175,18 @@ describe('Roles Index Livewire', function () {
         $this->get(route('roles.index'))
             ->assertOk()
             ->assertDontSee('Nieuwe rol aanmaken');
+    });
+
+    it('renders the "Geen organisatie" badge for template roles (no longer "Sjabloon")', function () {
+        // Force the template to be visible by removing the per-org copy auto-created in beforeEach.
+        Role::where('name', 'organisation_admin')->where('team_id', $this->org->id)->delete();
+
+        $this->actingAs($this->actor);
+
+        $this->get(route('roles.index'))
+            ->assertOk()
+            ->assertSee('Geen organisatie')
+            ->assertDontSee('Sjabloon');
     });
 
     it('shows an empty-state callout when there are no visible roles', function () {

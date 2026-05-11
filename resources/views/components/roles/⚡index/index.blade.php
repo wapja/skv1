@@ -30,7 +30,7 @@
                         <flux:table.cell>{{ $role->permissions->pluck('name')->join(', ') ?: '—' }}</flux:table.cell>
                         <flux:table.cell>
                             @if ($role->team_id === null)
-                                <flux:badge>{{ __('Sjabloon') }}</flux:badge>
+                                <flux:badge>{{ __('Geen organisatie') }}</flux:badge>
                             @else
                                 <flux:badge variant="primary">{{ __('Aangepast') }}</flux:badge>
                             @endif

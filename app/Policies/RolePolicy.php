@@ -28,6 +28,10 @@ class RolePolicy
 
     public function update(User $actor, Role $role): bool
     {
+        if ($actor->isSuperAdmin()) {
+            return true;
+        }
+
         if ($this->isTemplate($role)) {
             return false;
         }
