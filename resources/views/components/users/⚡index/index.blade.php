@@ -87,6 +87,10 @@
                                             {{ $user->{$key}?->format('d-m-Y') }}
                                         @break
 
+                                        @case('organisation')
+                                            {{ $user->organisation?->name ?? '—' }}
+                                        @break
+
                                         @default
                                             {{ $user->{$key} }}
                                     @endswitch

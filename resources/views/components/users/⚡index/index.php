@@ -58,7 +58,7 @@ new class extends Component
      */
     public function availableColumns(): array
     {
-        return [
+        $columns = [
             'name' => __('Naam'),
             'email' => __('E-mailadres'),
             'internal_id' => __('Intern ID'),
@@ -69,6 +69,12 @@ new class extends Component
             'status' => __('Status'),
             'locale' => __('Taal'),
         ];
+
+        if (auth()->user()?->isSuperAdmin()) {
+            $columns['organisation'] = __('Organisatie');
+        }
+
+        return $columns;
     }
 
     /** @return array<int,int> */
@@ -80,6 +86,11 @@ new class extends Component
     public function users()
     {
         $query = User::query();
+
+        if (auth()->user()?->isSuperAdmin()) {
+            $query->with('organisation:id,name');
+        }
+
         $this->applyFilters($query);
         $this->applySort($query);
 
@@ -198,6 +209,10 @@ new class extends Component
     public function render()
     {
         $this->authorize('viewAny', User::class);
+
+        if (auth()->user()?->isSuperAdmin() && ! in_array('organisation', $this->selectedColumns, true)) {
+            $this->selectedColumns[] = 'organisation';
+        }
 
         return $this->view([
             'users' => $this->users(),

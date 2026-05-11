@@ -356,6 +356,33 @@ describe('Users Index Livewire', function () {
         Livewire::test('users.index')
             ->assertDontSee('Uitgenodigde gebruikers');
     });
+
+    it('exposes the organisation column to a super_admin', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'org-col-x', 'name' => 'Org-Col-UniqueX']);
+        User::factory()->for($otherOrg)->create(['first_name' => 'Bobby', 'last_name' => 'Tester']);
+
+        $editor = User::factory()->superAdmin()->create([
+            'email' => 'super-listing@example.local',
+            'organisation_id' => null,
+        ]);
+        $this->actingAs($editor);
+
+        $component = Livewire::test('users.index');
+
+        expect(array_keys($component->instance()->availableColumns()))
+            ->toContain('organisation');
+
+        $component->assertSee('Org-Col-UniqueX');
+    });
+
+    it('hides the organisation column from non-super-admins', function () {
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test('users.index');
+
+        expect(array_keys($component->instance()->availableColumns()))
+            ->not->toContain('organisation');
+    });
 });
 
 describe('Users Edit Livewire', function () {
@@ -536,5 +563,19 @@ describe('Users Edit Livewire', function () {
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
         expect($this->actor->fresh()->getRoleNames()->all())->toBe([]);
+    });
+
+    it('shows the organisation name on the edit page', function () {
+        $unique = Organisation::factory()->create(['slug' => 'edit-org-y', 'name' => 'Edit-Org-UniqueY']);
+        $target = User::factory()->for($unique)->create();
+
+        $editor = User::factory()->superAdmin()->create([
+            'email' => 'super-edit-view@example.local',
+            'organisation_id' => null,
+        ]);
+        $this->actingAs($editor);
+
+        Livewire::test('users.edit', ['user' => $target])
+            ->assertSee('Edit-Org-UniqueY');
     });
 });

@@ -10,6 +10,12 @@
 
         <flux:input wire:model="email" type="email" label="{{ __('E-mailadres') }}" required />
 
+        <flux:input
+            :value="$user->organisation?->name ?? '—'"
+            label="{{ __('Organisatie') }}"
+            readonly
+            disabled />
+
         <div class="grid grid-cols-2 gap-4">
             <flux:input wire:model="internal_id" label="{{ __('Personeelsnummer') }}" />
             <flux:input wire:model="phone" label="{{ __('Telefoon') }}" />

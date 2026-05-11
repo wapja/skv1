@@ -23,6 +23,9 @@
             size="sm" />
     @break
 
+    @case('organisation')
+    @break
+
     @default
         <flux:input
             wire:model.live.debounce.300ms="filters.{{ $key }}"
