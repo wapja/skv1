@@ -19,6 +19,9 @@
         <flux:table>
             <flux:table.columns>
                 <flux:table.column>{{ __('Rol') }}</flux:table.column>
+                @if (auth()->user()?->isSuperAdmin())
+                    <flux:table.column>{{ __('Organisatie') }}</flux:table.column>
+                @endif
                 <flux:table.column>{{ __('Permissies') }}</flux:table.column>
                 <flux:table.column>{{ __('Type') }}</flux:table.column>
                 <flux:table.column>{{ __('Acties') }}</flux:table.column>
@@ -27,6 +30,11 @@
                 @foreach ($roles as $role)
                     <flux:table.row :key="$role->id">
                         <flux:table.cell>{{ $role->name }}</flux:table.cell>
+                        @if (auth()->user()?->isSuperAdmin())
+                            <flux:table.cell>
+                                {{ $role->team?->name ?? __('Geen organisatie') }}
+                            </flux:table.cell>
+                        @endif
                         <flux:table.cell>{{ $role->permissions->pluck('name')->join(', ') ?: '—' }}</flux:table.cell>
                         <flux:table.cell>
                             @if ($role->team_id === null)

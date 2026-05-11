@@ -201,6 +201,33 @@ describe('Roles Index Livewire', function () {
             ->assertDontSee('foreign_role');
     });
 
+    it('renders the "Organisatie" column with org name for super_admin', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2', 'name' => 'Acme BV']);
+        Role::firstOrCreate(['name' => 'foreign_role', 'guard_name' => 'web', 'team_id' => $otherOrg->id]);
+
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $this->actingAs($superAdmin);
+
+        $this->get(route('roles.index'))
+            ->assertOk()
+            ->assertSee('Organisatie')
+            ->assertSee('Acme BV');
+    });
+
+    it('renders "Geen organisatie" in the org column for template roles (super_admin view)', function () {
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $this->actingAs($superAdmin);
+
+        // organisation_admin template is seeded with team_id=NULL by RolesAndPermissionsSeeder.
+        $this->get(route('roles.index'))
+            ->assertOk()
+            ->assertSee('Geen organisatie');
+    });
+
     it('renders the "Geen organisatie" badge for template roles (no longer "Sjabloon")', function () {
         // Force the template to be visible by removing the per-org copy auto-created in beforeEach.
         Role::where('name', 'organisation_admin')->where('team_id', $this->org->id)->delete();
