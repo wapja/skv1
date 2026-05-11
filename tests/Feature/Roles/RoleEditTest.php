@@ -310,6 +310,25 @@ describe('Super admin template editing', function () {
         expect($role->fresh()->team_id)->toBe($this->org->id);
     });
 
+    it('rejects a move when the target org already has a role with the same name', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2']);
+        Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $otherOrg->id]);
+
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test('roles.edit', ['role' => $role])
+            ->set('organisationId', $otherOrg->id)
+            ->call('save')
+            ->assertHasErrors(['name']);
+
+        expect($role->fresh()->team_id)->toBe($this->org->id);
+    });
+
 });
 
 describe('Create mode', function () {
