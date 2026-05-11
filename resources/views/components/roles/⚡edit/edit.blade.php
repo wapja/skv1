@@ -11,6 +11,14 @@
         <form wire:submit="save" class="space-y-6">
             <flux:input wire:model="name" label="{{ __('Rolnaam') }}" required />
 
+            @if (auth()->user()?->isSuperAdmin() && $role && $role->team_id !== null)
+                <flux:select wire:model="organisationId" label="{{ __('Organisatie') }}">
+                    @foreach ($organisations as $organisation)
+                        <flux:select.option value="{{ $organisation->id }}">{{ $organisation->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            @endif
+
             <fieldset>
                 <flux:legend>{{ __('Permissies') }}</flux:legend>
                 <div class="grid grid-cols-2 gap-2 mt-2">

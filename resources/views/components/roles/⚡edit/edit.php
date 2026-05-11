@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Organisation;
 use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -16,6 +17,8 @@ new class extends Component
 
     public array $selectedPermissions = [];
 
+    public ?int $organisationId = null;
+
     public function mount(?Role $role = null): void
     {
         if ($role && $role->exists) {
@@ -24,6 +27,7 @@ new class extends Component
             $this->role = $role;
             $this->name = $role->name;
             $this->selectedPermissions = $role->permissions->pluck('id')->all();
+            $this->organisationId = $role->team_id;
         } else {
             $this->authorize('create', Role::class);
         }
@@ -96,6 +100,7 @@ new class extends Component
     {
         return $this->view([
             'permissions' => Permission::orderBy('name')->get(),
+            'organisations' => Organisation::orderBy('name')->get(),
         ]);
     }
 };

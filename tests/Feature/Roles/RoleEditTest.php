@@ -238,6 +238,41 @@ describe('Super admin template editing', function () {
             ->assertRedirect(route('roles.index'));
     });
 
+    it('does NOT render the organisation select for a regular org_admin editing a per-org role', function () {
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+        $this->actingAs($this->actor);
+
+        $this->get(route('roles.edit', $role))
+            ->assertOk()
+            ->assertDontSee('wire:model="organisationId"', false);
+    });
+
+    it('does NOT render the organisation select for a super_admin editing a template role', function () {
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $template = Role::where('name', 'organisation_admin')->whereNull('team_id')->firstOrFail();
+
+        $this->actingAs($superAdmin);
+
+        $this->get(route('roles.edit', $template))
+            ->assertOk()
+            ->assertDontSee('wire:model="organisationId"', false);
+    });
+
+    it('renders the organisation select for a super_admin editing a per-org role', function () {
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $this->actingAs($superAdmin);
+
+        $this->get(route('roles.edit', $role))
+            ->assertOk()
+            ->assertSee('wire:model="organisationId"', false);
+    });
+
 });
 
 describe('Create mode', function () {
