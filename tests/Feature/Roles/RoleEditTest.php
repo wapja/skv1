@@ -273,6 +273,24 @@ describe('Super admin template editing', function () {
             ->assertSee('wire:model="organisationId"', false);
     });
 
+    it('lets super_admin move a per-org role to a different organisation when no users are attached', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2']);
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test('roles.edit', ['role' => $role])
+            ->set('organisationId', $otherOrg->id)
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('roles.index'));
+
+        expect($role->fresh()->team_id)->toBe($otherOrg->id);
+    });
+
 });
 
 describe('Create mode', function () {

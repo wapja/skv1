@@ -42,7 +42,16 @@ new class extends Component
         }
 
         $nameUnchanged = $this->role !== null && $this->name === $this->role->name;
-        $scopeTeamId = $this->role !== null ? $this->role->team_id : tenant()?->id;
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+        $wantsMove = $this->role !== null
+            && $isSuperAdmin
+            && $this->role->team_id !== null
+            && $this->organisationId !== null
+            && (int) $this->organisationId !== (int) $this->role->team_id;
+
+        $targetTeamId = $wantsMove
+            ? (int) $this->organisationId
+            : ($this->role !== null ? $this->role->team_id : tenant()?->id);
 
         $this->validate([
             'name' => [
@@ -50,7 +59,7 @@ new class extends Component
                 Rule::unique('roles')
                     ->where(fn ($q) => $q
                         ->where('guard_name', 'web')
-                        ->where('team_id', $scopeTeamId))
+                        ->where('team_id', $targetTeamId))
                     ->ignore($this->role?->id),
                 $nameUnchanged ? null : Rule::notIn(['super_admin', 'organisation_admin', 'member']),
                 function ($attribute, $value, $fail) use ($nameUnchanged): void {
@@ -69,13 +78,18 @@ new class extends Component
             ],
             'selectedPermissions' => 'array',
             'selectedPermissions.*' => 'integer|exists:permissions,id',
+            'organisationId' => ['nullable', 'integer', Rule::exists('organisations', 'id')],
         ]);
 
         $wasCreate = $this->role === null;
 
-        DB::transaction(function () {
+        DB::transaction(function () use ($wantsMove, $targetTeamId) {
             if ($this->role) {
-                $this->role->update(['name' => $this->name]);
+                $update = ['name' => $this->name];
+                if ($wantsMove) {
+                    $update['team_id'] = $targetTeamId;
+                }
+                $this->role->update($update);
             } else {
                 $this->role = Role::create([
                     'name' => $this->name,
