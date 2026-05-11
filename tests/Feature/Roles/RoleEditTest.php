@@ -344,6 +344,17 @@ describe('Super admin template editing', function () {
         expect($role->fresh()->team_id)->toBe($this->org->id);
     });
 
+    it('does not load organisations on render for a non-super-admin (perf)', function () {
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+        Organisation::factory()->create(['slug' => 'demo2']);
+
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test('roles.edit', ['role' => $role]);
+
+        expect($component->viewData('organisations'))->toBeEmpty();
+    });
+
 });
 
 describe('Create mode', function () {

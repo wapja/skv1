@@ -127,7 +127,9 @@ new class extends Component
     {
         return $this->view([
             'permissions' => Permission::orderBy('name')->get(),
-            'organisations' => Organisation::orderBy('name')->get(),
+            'organisations' => auth()->user()?->isSuperAdmin()
+                ? Organisation::orderBy('name')->get()
+                : collect(),
         ]);
     }
 };
