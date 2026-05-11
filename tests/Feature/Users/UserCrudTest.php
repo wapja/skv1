@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Organisation;
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Livewire\Livewire;
@@ -428,6 +429,20 @@ describe('Users Edit Livewire', function () {
                 'test1' => __('Test rol 1'),
                 'test2' => __('Test rol 2'),
             ]);
+    });
+
+    it('includes custom per-org roles created via the roles management page', function () {
+        $target = User::factory()->for($this->org)->create();
+
+        // Custom role created via the roles management UI lives at team_id = current org.
+        Role::create(['name' => 'assessor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test('users.edit', ['user' => $target]);
+
+        expect(array_keys($component->instance()->availableRoles()))
+            ->toContain('assessor');
     });
 
     it('shows super_admin additionally to super-admin editor', function () {

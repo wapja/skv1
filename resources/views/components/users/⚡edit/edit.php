@@ -2,6 +2,7 @@
 
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Organisation;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\UserRoleSyncer;
 use Illuminate\Support\Facades\DB;
@@ -63,17 +64,37 @@ new class extends Component
      */
     public function availableRoles(): array
     {
-        $base = [
+        $labels = [
             'organisation_admin' => __('Organisatie-admin'),
             'test1' => __('Test rol 1'),
             'test2' => __('Test rol 2'),
         ];
 
-        if (auth()->user()?->isSuperAdmin()) {
-            return ['super_admin' => __('Super-admin')] + $base;
+        $primaryOrgId = $this->user->organisation_id
+            ?: Organisation::orderBy('id')->value('id');
+
+        $roles = [];
+        if ($primaryOrgId !== null) {
+            // super_admin is treated as cross-org binary state by UserRoleSyncer,
+            // so it must not appear in the per-org list (its per-org copy is
+            // an implementation detail of OrganisationObserver).
+            $names = Role::query()
+                ->where('team_id', $primaryOrgId)
+                ->where('name', '!=', 'super_admin')
+                ->orderBy('name')
+                ->pluck('name')
+                ->all();
+
+            foreach ($names as $name) {
+                $roles[$name] = $labels[$name] ?? $name;
+            }
         }
 
-        return $base;
+        if (auth()->user()?->isSuperAdmin()) {
+            return ['super_admin' => __('Super-admin')] + $roles;
+        }
+
+        return $roles;
     }
 
     protected function rules(): array
