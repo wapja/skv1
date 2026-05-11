@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Organisation;
+use App\Models\Role;
 use App\Services\InvitationService;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -57,17 +58,44 @@ new class extends Component
      */
     public function availableRoles(): array
     {
-        $base = [
+        $labels = [
             'organisation_admin' => __('Organisatie-admin'),
             'test1' => __('Test rol 1'),
             'test2' => __('Test rol 2'),
         ];
 
-        if (auth()->user()?->isSuperAdmin()) {
-            return ['super_admin' => __('Super-admin')] + $base;
+        $targetOrgId = tenant()?->id
+            ?? ($this->organisationId !== null ? (int) $this->organisationId : null);
+
+        $roles = [];
+        if ($targetOrgId !== null) {
+            // super_admin is cross-org binary state, handled separately; its
+            // per-org copy (made by OrganisationObserver) must not surface here.
+            $names = Role::query()
+                ->where('team_id', $targetOrgId)
+                ->where('name', '!=', 'super_admin')
+                ->orderBy('name')
+                ->pluck('name')
+                ->all();
+
+            foreach ($names as $name) {
+                $roles[$name] = $labels[$name] ?? $name;
+            }
         }
 
-        return $base;
+        if (auth()->user()?->isSuperAdmin()) {
+            return ['super_admin' => __('Super-admin')] + $roles;
+        }
+
+        return $roles;
+    }
+
+    public function updatedOrganisationId(): void
+    {
+        // Switching target orgs invalidates previously-selected roles, which
+        // might not exist in the new org's catalogue. Clear to avoid stale
+        // selections silently failing on submit.
+        $this->roles = [];
     }
 
     public function send(InvitationService $service): void

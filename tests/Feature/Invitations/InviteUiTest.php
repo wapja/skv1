@@ -3,6 +3,7 @@
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
 use App\Models\Organisation;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\InvitationService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -242,7 +243,9 @@ describe('Send invitation Livewire component', function () {
             ]);
     });
 
-    it('shows super_admin additionally to super-admin inviters on apex', function () {
+    it('shows only super_admin on apex before a target organisation is selected', function () {
+        // Without a target org, we have no per-org role catalogue to draw from.
+        // Only super_admin (cross-org binary state) is meaningful.
         app()->forgetInstance('currentOrganisation');
 
         $superAdmin = User::factory()->superAdmin()->create([
@@ -255,7 +258,75 @@ describe('Send invitation Livewire component', function () {
         $component = Livewire::test('invitations.send');
 
         expect(array_keys($component->instance()->availableRoles()))
+            ->toBe(['super_admin']);
+    });
+
+    it('shows the target org\'s per-org roles once super_admin picks one on apex', function () {
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'super-after-pick@example.local',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        $component = Livewire::test('invitations.send')
+            ->set('organisationId', $this->org->id);
+
+        expect(array_keys($component->instance()->availableRoles()))
             ->toBe(['super_admin', 'organisation_admin', 'test1', 'test2']);
+    });
+
+    it('includes custom per-org roles in tenant context', function () {
+        Role::create(['name' => 'assessor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+
+        $this->actingAs($this->actor);
+
+        $component = Livewire::test('invitations.send');
+
+        expect(array_keys($component->instance()->availableRoles()))
+            ->toContain('assessor');
+    });
+
+    it('includes custom roles of the chosen target org for apex super_admin', function () {
+        $target = Organisation::factory()->create(['slug' => 'apex-target']);
+        // Bypass Spatie's create() team-collision check for cross-team setup.
+        Role::firstOrCreate(['name' => 'assessor', 'guard_name' => 'web', 'team_id' => $target->id]);
+
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'apex-pick-custom@example.local',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        $component = Livewire::test('invitations.send')
+            ->set('organisationId', $target->id);
+
+        expect(array_keys($component->instance()->availableRoles()))
+            ->toContain('assessor');
+    });
+
+    it('clears selected roles when organisationId changes (no stale invalid selections)', function () {
+        $orgB = Organisation::factory()->create(['slug' => 'apex-orgb']);
+
+        app()->forgetInstance('currentOrganisation');
+
+        $superAdmin = User::factory()->superAdmin()->create([
+            'email' => 'apex-switch@example.local',
+            'organisation_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test('invitations.send')
+            ->set('organisationId', $this->org->id)
+            ->set('roles', ['test1'])
+            ->set('organisationId', $orgB->id)
+            ->assertSet('roles', []);
     });
 
     it('rejects a spoofed super_admin role from a non-super-admin inviter', function () {
