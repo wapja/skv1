@@ -291,6 +291,25 @@ describe('Super admin template editing', function () {
         expect($role->fresh()->team_id)->toBe($otherOrg->id);
     });
 
+    it('blocks super_admin from moving a role that still has users attached', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2']);
+        $role = Role::create(['name' => 'editor', 'guard_name' => 'web', 'team_id' => $this->org->id]);
+        $member = User::factory()->for($this->org)->create();
+        $member->assignRole($role);
+
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test('roles.edit', ['role' => $role])
+            ->set('organisationId', $otherOrg->id)
+            ->call('save')
+            ->assertHasErrors(['organisationId']);
+
+        expect($role->fresh()->team_id)->toBe($this->org->id);
+    });
+
 });
 
 describe('Create mode', function () {

@@ -78,7 +78,20 @@ new class extends Component
             ],
             'selectedPermissions' => 'array',
             'selectedPermissions.*' => 'integer|exists:permissions,id',
-            'organisationId' => ['nullable', 'integer', Rule::exists('organisations', 'id')],
+            'organisationId' => [
+                'nullable', 'integer', Rule::exists('organisations', 'id'),
+                function ($attribute, $value, $fail) use ($wantsMove): void {
+                    if (! $wantsMove) {
+                        return;
+                    }
+                    $usersCount = DB::table('model_has_roles')
+                        ->where('role_id', $this->role->id)
+                        ->count();
+                    if ($usersCount > 0) {
+                        $fail(__('Verplaatsen geblokkeerd: er zijn nog gebruikers aan deze rol gekoppeld.'));
+                    }
+                },
+            ],
         ]);
 
         $wasCreate = $this->role === null;
