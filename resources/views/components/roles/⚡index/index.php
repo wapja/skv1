@@ -25,6 +25,16 @@ new class extends Component
 
     public function roles()
     {
+        if (auth()->user()?->isSuperAdmin()) {
+            return Role::query()
+                ->with(['permissions', 'team'])
+                ->withCount('users')
+                ->orderByRaw('team_id IS NOT NULL')
+                ->orderBy('team_id')
+                ->orderBy('name')
+                ->get();
+        }
+
         $tenantId = tenant()?->id;
 
         return Role::query()

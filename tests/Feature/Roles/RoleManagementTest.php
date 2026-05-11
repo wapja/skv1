@@ -177,6 +177,30 @@ describe('Roles Index Livewire', function () {
             ->assertDontSee('Nieuwe rol aanmaken');
     });
 
+    it('shows per-org roles from another organisation to a super_admin', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2']);
+        // firstOrCreate bypasses Spatie's static create() team-scoped existence check.
+        Role::firstOrCreate(['name' => 'foreign_role', 'guard_name' => 'web', 'team_id' => $otherOrg->id]);
+
+        $superAdmin = User::factory()->for($this->org)->create();
+        $superAdmin->assignRole('super_admin');
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test('roles.index')
+            ->assertSee('foreign_role');
+    });
+
+    it('does NOT show roles from another organisation to a regular org_admin (regression guard)', function () {
+        $otherOrg = Organisation::factory()->create(['slug' => 'demo2']);
+        Role::firstOrCreate(['name' => 'foreign_role', 'guard_name' => 'web', 'team_id' => $otherOrg->id]);
+
+        $this->actingAs($this->actor);
+
+        Livewire::test('roles.index')
+            ->assertDontSee('foreign_role');
+    });
+
     it('renders the "Geen organisatie" badge for template roles (no longer "Sjabloon")', function () {
         // Force the template to be visible by removing the per-org copy auto-created in beforeEach.
         Role::where('name', 'organisation_admin')->where('team_id', $this->org->id)->delete();
